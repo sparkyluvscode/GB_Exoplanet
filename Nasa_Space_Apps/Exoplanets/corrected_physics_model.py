@@ -23,6 +23,20 @@ def create_corrected_physics_features(df):
     """Create features with correct physics and units."""
     print("Creating corrected physics features...")
     
+    # Add missing columns with reasonable defaults
+    if 'pl_insol' not in df.columns:
+        # Estimate insolation from orbital period and stellar properties
+        df['pl_insol'] = (df['st_mass'] / (df['pl_orbper'] / 365.25) ** (2/3)) ** 2
+    if 'pl_eqt' not in df.columns:
+        # Estimate equilibrium temperature from stellar temperature and distance
+        df['pl_eqt'] = df['st_teff'] * (df['st_rad'] / (df['pl_orbper'] / 365.25) ** (2/3)) ** 0.5 * 0.25
+    if 'st_logg' not in df.columns:
+        # Estimate surface gravity from stellar mass and radius
+        df['st_logg'] = np.log10(df['st_mass'] / (df['st_rad'] ** 2)) + 4.44
+    if 'st_met' not in df.columns:
+        # Default to solar metallicity
+        df['st_met'] = 0.0
+    
     # CRITICAL FIX 1: Correct transit depth units
     # pl_rade is Earth radii, st_rad is Solar radii
     # Convert: Rp/Rs = pl_rade / (st_rad * 109.2)
@@ -174,8 +188,8 @@ def main():
     print("Fixing critical physics errors identified by ChatGPT")
     print()
     
-    # Load enhanced data
-    data = pd.read_csv('Nasa_Space_Apps/Exoplanets/enhanced_processed_exoplanet_data.csv')
+    # Load processed data
+    data = pd.read_csv('Nasa_Space_Apps/Exoplanets/processed_exoplanet_data.csv')
     print(f"Loaded data: {data.shape}")
     
     # Create corrected physics features
