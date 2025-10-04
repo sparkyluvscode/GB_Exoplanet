@@ -1,0 +1,7 @@
+# Requirements for XGBoost Exoplanet Classifier and Web App
+xgboost
+scikit-learn
+pandas
+numpy
+joblib
+streamlit
