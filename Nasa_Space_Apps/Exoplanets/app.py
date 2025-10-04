@@ -13,7 +13,7 @@ import numpy as np
 import joblib
 
 # Load the trained Random Forest model
-MODEL_PATH = 'rf_exoplanet_model.pkl'
+MODEL_PATH = 'Nasa_Space_Apps/Exoplanets/rf_exoplanet_model.pkl'
 model = joblib.load(MODEL_PATH)
 
 st.set_page_config(page_title="Exoplanet Predictor", page_icon="🪐", layout="centered")

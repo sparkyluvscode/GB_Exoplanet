@@ -13,12 +13,14 @@ Author: NASA Space Apps Team
 """
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
+
+import xgboost as xgb
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, accuracy_score
 import joblib
 
 # Path to preprocessed data CSV
-DATA_PATH = '../Exoplanets/processed_exoplanet_data.csv'
+DATA_PATH = 'Nasa_Space_Apps/Exoplanets/processed_exoplanet_data.csv'
 
 # Load the preprocessed dataset
 data = pd.read_csv(DATA_PATH)
@@ -52,14 +54,26 @@ model = RandomForestClassifier(
     max_depth=6,           # Limit tree depth for generalization
     random_state=42
 )
+
+xgb_model = xgb.XGBClassifier(n_estimators=1000, learning_rate=0.05, random_state=42)
+
+xgb_model.fit(X_train, y_train)
 model.fit(X_train, y_train)
 
 # Evaluate the model on the test set
 y_pred = model.predict(X_test)
+xgb_pred = xgb_model.predict(X_test)
+
 acc = accuracy_score(y_test, y_pred)
+xgb_acc = accuracy_score(y_test, xgb_pred)
+
 print('Accuracy: {:.4f}'.format(acc))
 print(classification_report(y_test, y_pred, digits=4))
 
+print('XGBoost Accuracy: {:.4f}'.format(xgb_acc))
+print(classification_report(y_test, xgb_pred, digits=4))
+
+
 # Save the trained model for later use in the web app
-joblib.dump(model, '../Exoplanets/rf_exoplanet_model.pkl')
+joblib.dump(model, 'Nasa_Space_Apps/Exoplanets/rf_exoplanet_model.pkl')
 print('Model saved as rf_exoplanet_model.pkl')
