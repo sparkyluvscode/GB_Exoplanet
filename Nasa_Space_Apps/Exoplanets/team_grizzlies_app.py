@@ -209,38 +209,7 @@ st.markdown("""
         color: white;
     }
     
-    # /* Physics Metrics */
-    # .physics-container {
-    #     display: grid;
-    #     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    #     gap: 1rem;
-    #     margin: 2rem 0;
-    # }
     
-    .physics-metric {
-        background: var(--gray-50);
-        padding: 1rem;
-        border-radius: 12px;
-        border: 1px solid var(--gray-200);
-        text-align: center;
-    }
-    
-    .physics-label {
-        font-family: 'Inter', sans-serif;
-        font-size: 0.8rem;
-        color: var(--gray-600);
-        margin-bottom: 0.25rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    .physics-value {
-        font-family: 'Inter', sans-serif;
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: var(--gray-800);
-        font-variant-numeric: tabular-nums;
-    }
     
     /* Form Sections */
     .form-section {
@@ -382,9 +351,6 @@ st.markdown("""
             align-items: center;
         }
         
-        .physics-container {
-            grid-template-columns: repeat(2, 1fr);
-        }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -393,17 +359,17 @@ st.markdown("""
 def load_model_artifact():
     """Load the existing model artifact with all components."""
     try:
-        # Load main model
-        model = joblib.load('Nasa_Space_Apps/Exoplanets/corrected_physics_model.pkl')
+        # Load main model - 
+        model = joblib.load('Nasa_Space_Apps/Exoplanets/simple_transit_model.pkl')
         
         # Load feature columns (exact inference order)
-        features = joblib.load('Nasa_Space_Apps/Exoplanets/corrected_physics_features.pkl')
+        features = joblib.load('Nasa_Space_Apps/Exoplanets/simple_transit_features.pkl')
         
         # Load imputer
-        imputer = joblib.load('Nasa_Space_Apps/Exoplanets/corrected_physics_imputer.pkl')
+        imputer = joblib.load('Nasa_Space_Apps/Exoplanets/simple_transit_imputer.pkl')
         
         # Get file info
-        model_file = 'Nasa_Space_Apps/Exoplanets/corrected_physics_model.pkl'
+        model_file = 'Nasa_Space_Apps/Exoplanets/simple_transit_model.pkl'
         model_size = os.path.getsize(model_file) / (1024 * 1024)  # MB
         model_date = datetime.fromtimestamp(os.path.getmtime(model_file)).strftime("%Y-%m-%d %H:%M")
         
@@ -411,7 +377,7 @@ def load_model_artifact():
             'model': model,
             'features': features,
             'imputer': imputer,
-            'name': 'Corrected Physics Model',
+            'name': 'Simple Transit Model',
             'size': f"{model_size:.1f} MB",
             'date': model_date,
             'status': 'loaded'
@@ -422,49 +388,61 @@ def load_model_artifact():
             'error': str(e)
         }
 
-def create_corrected_physics_features(df):
-    """Create corrected physics features matching the training pipeline exactly."""
-    # Add missing columns with reasonable defaults
-    if 'pl_insol' not in df.columns:
-        df['pl_insol'] = (df['st_mass'] / (df['pl_orbper'] / 365.25) ** (2/3)) ** 2
-    if 'pl_eqt' not in df.columns:
-        df['pl_eqt'] = df['st_teff'] * (df['st_rad'] / (df['pl_orbper'] / 365.25) ** (2/3)) ** 0.5 * 0.25
-    if 'st_logg' not in df.columns:
-        df['st_logg'] = np.log10(df['st_mass'] / (df['st_rad'] ** 2)) + 4.44
-    if 'st_met' not in df.columns:
-        df['st_met'] = 0.0
+def create_simple_transit_features(df):
+    """Create simple transit features using only available data (scientifically honest)."""
+    # Basic transit physics features (using only the 8 available parameters)
     
-    # CRITICAL FIX 1: Correct transit depth units
-    df['transit_depth_corrected'] = (df['pl_rade'] / (df['st_rad'] * 109.2)) ** 2
-    df['transit_depth_corrected_log'] = np.log1p(df['transit_depth_corrected'])
+    # 1. Transit depth (planet radius / star radius)
+    # pl_rade is Earth radii, st_rad is Solar radii
+    # Convert: Rp/Rs = pl_rade / (st_rad * 109.2)
+    df['transit_depth'] = (df['pl_rade'] / (df['st_rad'] * 109.2)) ** 2
+    df['transit_depth_log'] = np.log1p(df['transit_depth'])
     
-    # CRITICAL FIX 2: Correct semi-major axis (use years, AU units)
+    # 2. Semi-major axis from orbital period (Kepler's 3rd law)
+    # a_AU = ((pl_orbper/365.25)^(2/3)) * (st_mass^(1/3))
     df['semi_major_axis_AU'] = ((df['pl_orbper'] / 365.25) ** (2/3)) * (df['st_mass'] ** (1/3))
     df['semi_major_axis_AU_log'] = np.log1p(df['semi_major_axis_AU'])
     
-    # CRITICAL FIX 3: Correct transit duration ratio
-    df['transit_duration_ratio_corrected'] = df['st_rad'] / (np.pi * df['semi_major_axis_AU'])
-    df['transit_duration_ratio_corrected_log'] = np.log1p(df['transit_duration_ratio_corrected'])
+    # 3. Transit duration proxy (R* / a)
+    df['transit_duration_ratio'] = df['st_rad'] / (np.pi * df['semi_major_axis_AU'])
+    df['transit_duration_ratio_log'] = np.log1p(df['transit_duration_ratio'])
     
-    # CORRECTED SNR proxy
-    df['snr_proxy_corrected'] = df['transit_depth_corrected'] * np.sqrt(df['st_teff'])
+    # 4. Signal-to-noise proxy (transit depth * stellar temperature)
+    df['snr_proxy'] = df['transit_depth'] * np.sqrt(df['st_teff'])
     
-    # Planetary physics
+    # 5. Planetary density (mass / volume)
     df['pl_density'] = df['pl_bmasse'] / (df['pl_rade'] ** 3)
     df['pl_density_log'] = np.log1p(df['pl_density'])
+    
+    # 6. Surface gravity (mass / radius^2)
     df['surface_gravity'] = df['pl_bmasse'] / (df['pl_rade'] ** 2)
     df['surface_gravity_log'] = np.log1p(df['surface_gravity'])
-    df['hab_zone_distance'] = np.abs(df['pl_insol'] - 1.0)
-    df['hab_zone_distance_log'] = np.log1p(df['hab_zone_distance'])
+    
+    # 7. Stellar luminosity proxy
     df['stellar_luminosity'] = (df['st_rad'] ** 2) * ((df['st_teff'] / 5778) ** 4)
     df['stellar_luminosity_log'] = np.log1p(df['stellar_luminosity'])
+    
+    # 8. Orbital velocity (Kepler's laws)
     df['orbital_velocity'] = np.sqrt(df['st_mass']) / np.sqrt(df['pl_orbper'])
     df['orbital_velocity_log'] = np.log1p(df['orbital_velocity'])
-    df['temp_ratio'] = df['pl_eqt'] / df['st_teff']
-    df['pl_orbper_log'] = np.log1p(df['pl_orbper'])
     
-    # DON'T add sy_dist_log - it's observational bias and not in the model
-    # df['sy_dist_log'] = np.log1p(df['sy_dist'])  # REMOVED
+    # 9. Log transformations for skewed features
+    df['pl_orbper_log'] = np.log1p(df['pl_orbper'])
+    df['st_teff_log'] = np.log1p(df['st_teff'])
+    df['st_rad_log'] = np.log1p(df['st_rad'])
+    df['st_mass_log'] = np.log1p(df['st_mass'])
+    
+    # 10. Planet-star size ratio
+    df['size_ratio'] = df['pl_rade'] / (df['st_rad'] * 109.2)
+    df['size_ratio_log'] = np.log1p(df['size_ratio'])
+    
+    # 11. Mass-radius relationship
+    df['mass_radius_ratio'] = df['pl_bmasse'] / df['pl_rade']
+    df['mass_radius_ratio_log'] = np.log1p(df['mass_radius_ratio'])
+    
+    # 12. Stellar properties ratios
+    df['st_teff_st_mass_ratio'] = df['st_teff'] / (df['st_mass'] * 5778)  # Normalized by solar
+    df['st_rad_st_mass_ratio'] = df['st_rad'] / df['st_mass']
     
     return df
 
@@ -472,25 +450,6 @@ def create_corrected_physics_features(df):
 def get_preset_data():
     """Get preset data from K2 k2pandc table."""
     return {
-        'K2-141 b': {
-            'pl_orbper': 0.28032,
-            'pl_rade': 1.51,
-            'pl_bmasse': 5.08,
-            'st_teff': 4590,
-            'st_rad': 0.683,
-            'st_mass': 0.709,
-            'st_logg': 4.54,
-            'pl_insol': 2900,
-            'pl_eqt': 2000,
-            'st_met': 0.0,
-            'status': 'CONFIRMED',
-            'table': 'k2pandc',
-            'tap_query': '''SELECT pl_orbper, pl_rade, pl_bmasse, pl_insol, 
-st_teff, st_rad, st_mass, st_logg, st_met
-FROM k2pandc 
-WHERE pl_name = 'K2-141 b' 
-LIMIT 1'''
-        },
         'K2-18 b': {
             'pl_orbper': 32.94,
             'pl_rade': 2.71,
@@ -498,44 +457,13 @@ LIMIT 1'''
             'st_teff': 3457,
             'st_rad': 0.41,
             'st_mass': 0.36,
-            'st_logg': 4.83,
-            'pl_insol': 1.38,
-            'pl_eqt': 265,
-            'st_met': 0.12,
+            'sy_dist': 124,  # parsecs
             'status': 'CONFIRMED',
-            'table': 'k2pandc',
-            'tap_query': '''SELECT pl_orbper, pl_rade, pl_bmasse, pl_insol, 
-st_teff, st_rad, st_mass, st_logg, st_met
-FROM k2pandc 
-WHERE pl_name = 'K2-18 b' 
-LIMIT 1'''
+            'description': 'Super-Earth in habitable zone of M dwarf star',
+            'discovery': '2015 (K2 mission)'
         }
     }
 
-def calculate_physics_chips(pl_rade, st_rad, pl_orbper, st_mass, st_teff):
-    """Calculate physics chips for judge intuition."""
-    # Rp/R⋆ ratio
-    rp_rs = pl_rade / (st_rad * 109.2)  # Correct Earth/Solar radii conversion
-    
-    # Expected transit depth in ppm
-    transit_depth_ppm = (rp_rs ** 2) * 1e6
-    
-    # Semi-major axis in AU (Kepler's law)
-    a_au = ((pl_orbper / 365.25) ** (2/3)) * (st_mass ** (1/3))
-    
-    # Transit duration ratio
-    tdur_p_ratio = st_rad / (np.pi * a_au)
-    
-    # SNR proxy
-    snr_proxy = (rp_rs ** 2) * np.sqrt(st_teff)
-    
-    return {
-        'rp_rs': f"{rp_rs:.4f}",
-        'transit_depth': f"{transit_depth_ppm:.0f} ppm",
-        'a_au': f"{a_au:.3f} AU",
-        'tdur_ratio': f"{tdur_p_ratio:.3f}",
-        'snr_proxy': f"{snr_proxy:.2f}"
-    }
 
 def main():
     """Main application function."""
@@ -580,33 +508,29 @@ def main():
         # Fixed threshold for simplicity
         current_threshold = 0.27  # High recall threshold - good for triage
         
-        # Preset Buttons
-        st.markdown("### Verified Presets")
-        st.markdown("Load confirmed exoplanets from NASA's K2 k2pandc table:")
+        # Preset Button
+        st.markdown("### Verified Preset")
+        st.markdown("Load a confirmed exoplanet from NASA's K2 k2pandc table:")
         preset_data = get_preset_data()
         
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button(f"🌍 {list(preset_data.keys())[0]} ({list(preset_data.values())[0]['status']})", key="preset1", use_container_width=True):
-                preset_name = list(preset_data.keys())[0]
-                st.session_state.preset = preset_name
-                st.rerun()
+        preset_clicked = st.button(f"🌍 K2-18 b (CONFIRMED)", key="preset", use_container_width=True)
         
-        with col2:
-            if st.button(f"🌍 {list(preset_data.keys())[1]} ({list(preset_data.values())[1]['status']})", key="preset2", use_container_width=True):
-                preset_name = list(preset_data.keys())[1]
-                st.session_state.preset = preset_name
-                st.rerun()
+        # Initialize preset state if not exists
+        if 'preset_loaded' not in st.session_state:
+            st.session_state.preset_loaded = False
+        
+        if preset_clicked:
+            st.session_state.preset_loaded = True
         
         # Parameter Form
         st.markdown("### Parameters")
         
         # Handle preset selection
-        if 'preset' in st.session_state:
-            preset_values = preset_data[st.session_state.preset]
+        if st.session_state.preset_loaded:
+            preset_values = preset_data['K2-18 b']
             st.markdown(f"""
             <div class="success-box">
-                📋 Loaded preset: <strong>{st.session_state.preset}</strong>
+                📋 Loaded preset: <strong>K2-18 b</strong>
             </div>
             """, unsafe_allow_html=True)
         else:
@@ -620,16 +544,13 @@ def main():
             pl_orbper = st.number_input('Orbital Period (days)', min_value=0.1, value=preset_values['pl_orbper'] if preset_values else 3.2, step=0.01, key="pl_orbper")
             pl_rade = st.number_input('Planet Radius (Re)', min_value=0.1, value=preset_values['pl_rade'] if preset_values else 1.0, step=0.01, key="pl_rade")
             pl_bmasse = st.number_input('Planet Mass (Me)', min_value=0.1, value=preset_values['pl_bmasse'] if preset_values else 1.0, step=0.01, key="pl_bmasse")
-            pl_insol = st.number_input('Insolation (⊕)', min_value=0.01, value=preset_values['pl_insol'] if preset_values else 1.0, step=0.01, key="pl_insol")
-            pl_eqt = st.number_input('Equilibrium Temperature (K)', min_value=100, value=preset_values['pl_eqt'] if preset_values else 300, step=10, key="pl_eqt")
         
         with col2:
             st.markdown("**⭐ Stellar Properties**")
             st_teff = st.number_input('Star Teff (K)', min_value=2000, value=preset_values['st_teff'] if preset_values else 5778, step=100, key="st_teff")
             st_rad = st.number_input('Star Radius (R☉)', min_value=0.1, value=preset_values['st_rad'] if preset_values else 1.0, step=0.01, key="st_rad")
             st_mass = st.number_input('Star Mass (M☉)', min_value=0.1, value=preset_values['st_mass'] if preset_values else 1.0, step=0.01, key="st_mass")
-            st_logg = st.number_input('Star log g (cgs)', min_value=0.0, value=preset_values['st_logg'] if preset_values else 4.44, step=0.01, key="st_logg")
-            st_met = st.number_input('[Fe/H] (dex)', min_value=-2.0, value=preset_values['st_met'] if preset_values else 0.0, step=0.01, key="st_met")
+            sy_dist = st.number_input('System Distance (pc)', min_value=1, value=preset_values['sy_dist'] if preset_values else 100, step=1, key="sy_dist")
         
         # Predict Button
         if st.button("🚀 Predict", type="primary", use_container_width=True):
@@ -637,7 +558,7 @@ def main():
                 st.error("❌ Model artifact not found. Running in demo mode.")
                 return
             
-            # Create input data (without sy_dist - it's observational bias)
+            # Create input data (only parameters that exist in training data)
             input_data = {
                 'pl_orbper': pl_orbper,
                 'pl_rade': pl_rade,
@@ -645,15 +566,12 @@ def main():
                 'st_teff': st_teff,
                 'st_rad': st_rad,
                 'st_mass': st_mass,
-                'pl_insol': pl_insol,
-                'pl_eqt': pl_eqt,
-                'st_logg': st_logg,
-                'st_met': st_met
+                'sy_dist': sy_dist
             }
             
             # Create DataFrame and features
             df = pd.DataFrame([input_data])
-            df = create_corrected_physics_features(df)
+            df = create_simple_transit_features(df)
             
             # Ensure we have the exact features the model expects in the right order
             # Remove any extra features and reorder to match training
@@ -697,85 +615,18 @@ def main():
                 </div>
                 """, unsafe_allow_html=True)
             
-            # Physics chips
-            st.markdown("### 🔬 Physics Metrics")
-            physics = calculate_physics_chips(pl_rade, st_rad, pl_orbper, st_mass, st_teff)
-            
-            col1, col2, col3, col4, col5 = st.columns(5)
-            with col1:
-                st.markdown(f"""
-                <div class="physics-metric">
-                    <div class="physics-label">Planet/Star Ratio</div>
-                    <div class="physics-value">{physics["rp_rs"]}</div>
-                </div>
-                """, unsafe_allow_html=True)
-            with col2:
-                st.markdown(f"""
-                <div class="physics-metric">
-                    <div class="physics-label">Transit Depth</div>
-                    <div class="physics-value">{physics["transit_depth"]}</div>
-                </div>
-                """, unsafe_allow_html=True)
-            with col3:
-                st.markdown(f"""
-                <div class="physics-metric">
-                    <div class="physics-label">Semi-major Axis</div>
-                    <div class="physics-value">{physics["a_au"]}</div>
-                </div>
-                """, unsafe_allow_html=True)
-            with col4:
-                st.markdown(f"""
-                <div class="physics-metric">
-                    <div class="physics-label">Transit Duration</div>
-                    <div class="physics-value">{physics["tdur_ratio"]}</div>
-                </div>
-                """, unsafe_allow_html=True)
-            with col5:
-                st.markdown(f"""
-                <div class="physics-metric">
-                    <div class="physics-label">SNR Proxy</div>
-                    <div class="physics-value">{physics["snr_proxy"]}</div>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            # Sanity checks
-            if float(physics['rp_rs']) > 0.2:
-                st.markdown("""
-                <div class="warning-box">
-                    ⚠️ Rp/R⋆ > 0.2 - extreme/unlikely ratio
-                </div>
-                """, unsafe_allow_html=True)
-            if float(physics['transit_depth'].split()[0]) < 50:
-                st.markdown("""
-                <div class="warning-box">
-                    ⚠️ Transit depth < 50 ppm - very shallow
-                </div>
-                """, unsafe_allow_html=True)
-            
-            # Feature importance (simplified)
-            st.markdown("### 🎯 Why this score?")
-            feature_importance = artifact['model'].feature_importances_
-            top_features = sorted(zip(artifact['features'], feature_importance), key=lambda x: x[1], reverse=True)[:5]
-            
-            for i, (feature, importance) in enumerate(top_features, 1):
-                st.write(f"{i}. **{feature}**: {importance:.3f}")
-            
-            st.markdown("""
-            <div class="info-box">
-                💡 Top-5 feature contributions from model feature importances
-            </div>
-            """, unsafe_allow_html=True)
         
         # Provenance drawer for presets
-        if 'preset' in st.session_state:
-            preset_info = preset_data[st.session_state.preset]
+        if st.session_state.preset_loaded:
+            preset_info = preset_data['K2-18 b']
             st.markdown("### 📋 Provenance")
             st.markdown(f"""
             <div class="info-box">
-                <strong>Source:</strong> {preset_info['table']}<br>
-                Source tables for presets: NASA Exoplanet Archive K2 Planets & Candidates (k2pandc).
+                <strong>Source:</strong> NASA Exoplanet Archive<br>
+                <strong>Status:</strong> {preset_info['status']}<br>
+                <strong>Description:</strong> {preset_info['description']}<br>
+                <strong>Discovery:</strong> {preset_info['discovery']}
             </div>
-            <div class="code-block">{preset_info['tap_query']}</div>
             <div class="info-box">
                 📖 <a href="https://exoplanetarchive.ipac.caltech.edu/docs/API_k2pandc_columns.html" target="_blank">K2 k2pandc Column Documentation</a>
             </div>
