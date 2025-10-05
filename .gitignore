@@ -1,0 +1,20 @@
+# Ignore Python cache directories
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Ignore large model files
+Nasa_Space_Apps/Exoplanets/*.pkl
+
+# Ignore large CSV files if any
+Nasa_Space_Apps/Exoplanets/ultra_processed_exoplanet_data.csv
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ignore OS files
+.DS_Store
+Thumbs.db

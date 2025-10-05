@@ -8,8 +8,9 @@ import joblib
 import os
 
 # --- Configuration ---
-DATA_PATH = 'processed_exoplanet_data.csv'
-MODEL_DIR = '.'
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_PATH = os.path.join(SCRIPT_DIR, 'processed_exoplanet_data.csv')
+MODEL_DIR = SCRIPT_DIR
 MODEL_NAME = 'corrected_transit_model.pkl'
 FEATURES_NAME = 'corrected_transit_features.pkl'
 IMPUTER_NAME = 'corrected_transit_imputer.pkl'
