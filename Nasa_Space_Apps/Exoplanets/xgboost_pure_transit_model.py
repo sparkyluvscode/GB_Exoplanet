@@ -8,8 +8,9 @@ import joblib
 import os
 
 # --- Configuration ---
-DATA_PATH = 'Nasa_Space_Apps/Exoplanets/processed_exoplanet_data.csv'
-MODEL_DIR = 'Nasa_Space_Apps/Exoplanets/'
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_PATH = os.path.join(SCRIPT_DIR, 'processed_exoplanet_data.csv')
+MODEL_DIR = SCRIPT_DIR
 MODEL_NAME = 'pure_transit_model.pkl'  # This will overwrite the current one
 FEATURES_NAME = 'pure_transit_features.pkl'
 IMPUTER_NAME = 'pure_transit_imputer.pkl'
