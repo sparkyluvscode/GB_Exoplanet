@@ -902,7 +902,7 @@ def main():
                     - Scroll to zoom in/out for detailed views
                     - Try different viewing modes: Earth View, Space View, Top View, Side View
                     - Watch for the transit indicator when the planet crosses the star
-                    - Press 'B' to switch between single and binary star systems
+                    - Press SPACE to play/pause, R to reset view
                     """)
                     
                     # Load and display the enhanced Three.js animation
@@ -1013,7 +1013,7 @@ def main():
                 - Scroll to zoom in/out for detailed views
                 - Try different viewing modes: Earth View, Space View, Top View, Side View
                 - Watch for stellar variability and binary interactions
-                - Press 'B' to switch between single and binary star systems
+                - Press SPACE to play/pause, R to reset view
                 """)
                 
                 # Load and display the enhanced Three.js animation with binary star mode

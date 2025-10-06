@@ -317,7 +317,6 @@
             <h3 style="margin-top: 0; color: #64c8ff;">Mission Control</h3>
             <button id="playButton" class="control-button" onclick="togglePlayPause()">▶️ Start Mission</button>
             <button id="resetButton" class="control-button reset" onclick="resetAnimation()">🔄 Reset View</button>
-            <button id="binaryButton" class="control-button binary" onclick="toggleBinaryStar()">⭐ Binary System</button>
             <button id="earthViewButton" class="control-button earth-view" onclick="setEarthView()">🌍 Earth View</button>
             <button id="spaceViewButton" class="control-button space-view" onclick="setSpaceView()">🚀 Space View</button>
         </div>
@@ -818,19 +817,6 @@
             renderer.render(scene, camera);
         }
 
-        function toggleBinaryStar() {
-            missionParams.isBinary = !missionParams.isBinary;
-            derivedParams = calculateDerivedParams();
-            createObjects();
-            setupLighting();
-            setupCamera();
-            updateDisplay();
-            
-            const binaryButton = document.getElementById('binaryButton');
-            binaryButton.textContent = missionParams.isBinary ? '⭐ Single Star' : '⭐ Binary System';
-            
-            renderer.render(scene, camera);
-        }
 
         function setEarthView() {
             missionParams.viewingMode = 'earth';
@@ -950,14 +936,11 @@
             camera.position.multiplyScalar(1 + direction * zoomSpeed);
         });
 
-        // Keyboard controls
+        // Keyboard controls (B key removed - no binary toggle)
         document.addEventListener('keydown', (e) => {
             switch(e.key.toLowerCase()) {
                 case 'r':
                     resetAnimation();
-                    break;
-                case 'b':
-                    toggleBinaryStar();
                     break;
                 case ' ':
                     e.preventDefault();
