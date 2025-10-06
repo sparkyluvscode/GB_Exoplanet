@@ -740,7 +740,7 @@ def main():
             
             # Display results with enhanced storytelling
             if prediction == 1:
-                # Navy screen fade effect
+                # Navy screen fade effect - auto-remove after 2 seconds
                 st.markdown("""
                 <div id="fade-overlay" style="
                     position: fixed;
@@ -750,7 +750,7 @@ def main():
                     height: 100%;
                     background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
                     z-index: 9999;
-                    animation: fadeInOut 2s ease-in-out;
+                    animation: fadeInOut 2s ease-in-out forwards;
                 ">
                     <div style="
                         position: absolute;
@@ -772,17 +772,26 @@ def main():
                     0% { opacity: 0; }
                     20% { opacity: 1; }
                     80% { opacity: 1; }
-                    100% { opacity: 0; }
+                    100% { opacity: 0; visibility: hidden; }
                 }
                 </style>
+                
+                <script>
+                setTimeout(function() {
+                    var overlay = document.getElementById('fade-overlay');
+                    if (overlay) {
+                        overlay.style.display = 'none';
+                    }
+                }, 2000);
+                </script>
                 """, unsafe_allow_html=True)
                 
                 # Mission success details
                 st.success("**Mission Accomplished!** This appears to be a real exoplanet based on our advanced AI analysis.")
             else:
-                # Navy screen fade effect for no detection
+                # Navy screen fade effect for no detection - auto-remove after 2 seconds
                 st.markdown("""
-                <div id="fade-overlay" style="
+                <div id="fade-overlay-negative" style="
                     position: fixed;
                     top: 0;
                     left: 0;
@@ -790,7 +799,7 @@ def main():
                     height: 100%;
                     background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
                     z-index: 9999;
-                    animation: fadeInOut 2s ease-in-out;
+                    animation: fadeInOut 2s ease-in-out forwards;
                 ">
                     <div style="
                         position: absolute;
@@ -806,6 +815,15 @@ def main():
                         <p style="font-size: 1.2rem; color: #a0a0a0;">Space is full of mysteries waiting to be discovered!</p>
                     </div>
                 </div>
+                
+                <script>
+                setTimeout(function() {
+                    var overlay = document.getElementById('fade-overlay-negative');
+                    if (overlay) {
+                        overlay.style.display = 'none';
+                    }
+                }, 2000);
+                </script>
                 """, unsafe_allow_html=True)
                 
                 st.info("**Analysis Complete:** This signal appears to be stellar variability or instrumental noise. Try different parameters to find your exoplanet!")
