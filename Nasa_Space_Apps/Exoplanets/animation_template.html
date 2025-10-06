@@ -136,22 +136,46 @@
         // Texture loader
         const textureLoader = new THREE.TextureLoader();
         
-        // Load actual texture files
-        const sunTexture = textureLoader.load('sun.webp');
-        const blueWhiteTexture = textureLoader.load('blue_white.jpg');
-        const blueStarTexture = textureLoader.load('blue_star.png');
-        const terrestrialTexture = textureLoader.load('terrestrial.jpg');
+        // Load actual texture files with error handling
+        const sunTexture = textureLoader.load('sun.webp', undefined, undefined, (error) => {
+            console.log('Error loading sun.webp:', error);
+        });
+        const blueWhiteTexture = textureLoader.load('blue_white.jpg', undefined, undefined, (error) => {
+            console.log('Error loading blue_white.jpg:', error);
+        });
+        const blueStarTexture = textureLoader.load('blue_star.png', undefined, undefined, (error) => {
+            console.log('Error loading blue_star.png:', error);
+        });
+        const terrestrialTexture = textureLoader.load('terrestrial.jpg', undefined, undefined, (error) => {
+            console.log('Error loading terrestrial.jpg:', error);
+        });
         
-        // Create texture arrays for different star types
-        const starTextures = {
-            blue: blueStarTexture,
-            blue_white: blueWhiteTexture,
-            white: blueWhiteTexture,
-            yellow_white: sunTexture,
-            yellow: sunTexture,
-            orange: sunTexture,
-            red: sunTexture
+        // Create fallback textures
+        const createFallbackTexture = (color) => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+            gradient.addColorStop(0, color);
+            gradient.addColorStop(1, '#000000');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 256, 256);
+            return new THREE.CanvasTexture(canvas);
         };
+
+        // Create texture arrays for different star types with fallbacks
+        const starTextures = {
+            blue: blueStarTexture || createFallbackTexture('#3fddff'),
+            blue_white: blueWhiteTexture || createFallbackTexture('#3feaff'),
+            white: blueWhiteTexture || createFallbackTexture('#ffffff'),
+            yellow_white: sunTexture || createFallbackTexture('#dfa010'),
+            yellow: sunTexture || createFallbackTexture('#ffa010'),
+            orange: sunTexture || createFallbackTexture('#ff5030'),
+            red: sunTexture || createFallbackTexture('#ff1010')
+        };
+
+        const planetTexture = terrestrialTexture || createFallbackTexture('#0077ff');
 
         // Calculate derived parameters
         function calculateDerivedParams() {
@@ -206,8 +230,8 @@
             // Create planet with enhanced materials
             const planetGeometry = new THREE.SphereGeometry(derivedParams.planetSize, 64, 64);
             const planetMaterial = new THREE.MeshStandardMaterial({ 
-                map: terrestrialTexture,
-                normalMap: terrestrialTexture, // Use texture as normal map for surface detail
+                map: planetTexture,
+                normalMap: planetTexture, // Use texture as normal map for surface detail
                 roughness: 0.8,
                 metalness: 0.1,
                 emissive: new THREE.Color(0x001122), // Subtle glow
@@ -651,11 +675,26 @@
             camera.position.multiplyScalar(1 + direction * zoomSpeed);
         });
 
-        // Initialize
-        createObjects();
-        updateStarColor();
-        updateDisplay();
-        animate();
+        // Initialize with error handling
+        try {
+            console.log('Initializing Three.js animation...');
+            console.log('Animation parameters:', animationParams);
+            console.log('Derived parameters:', derivedParams);
+            
+            createObjects();
+            updateStarColor();
+            updateDisplay();
+            animate();
+            
+            console.log('Animation initialized successfully!');
+        } catch (error) {
+            console.error('Error initializing animation:', error);
+            // Show error message in the UI
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: red; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 10px; z-index: 1000;';
+            errorDiv.innerHTML = '<h3>Animation Error</h3><p>Failed to load Three.js animation. Check console for details.</p>';
+            document.getElementById('animation-container').appendChild(errorDiv);
+        }
 
         // Make functions available globally for Streamlit
         window.updateAnimationParameters = updateParameters;
