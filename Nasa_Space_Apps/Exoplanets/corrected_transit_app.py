@@ -78,6 +78,12 @@ st.markdown("""
         border-color: rgba(100, 200, 255, 0.6);
     }
     
+    .integrated-result-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 50px rgba(100, 200, 255, 0.3);
+        border-color: rgba(100, 200, 255, 0.8);
+    }
+    
     .detection-card {
         background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
         padding: 2rem;
@@ -213,26 +219,134 @@ st.markdown("""
         border-radius: 8px;
     }
     
-    /* Tab styling */
+    /* Enhanced Tab styling */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
+        gap: 1rem;
+        margin: 1rem 0;
     }
     
     .stTabs [data-baseweb="tab"] {
-        background: rgba(0,0,0,0.3);
-        color: white;
-        border-radius: 10px;
-        border: 1px solid rgba(100, 200, 255, 0.3);
+        height: 4rem;
+        padding: 1rem 2rem;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 2px solid rgba(100, 200, 255, 0.3);
+        border-radius: 15px;
+        color: #a0a0a0;
+        font-weight: 700;
+        font-size: 1.2rem;
+        transition: all 0.3s ease;
+        min-width: 200px;
+        text-align: center;
+    }
+    
+    .stTabs [data-baseweb="tab"]:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(100, 200, 255, 0.2);
+        border-color: rgba(100, 200, 255, 0.6);
     }
     
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #64c8ff 0%, #5a6fd8 100%);
         color: white;
+        border-color: #64c8ff;
+        box-shadow: 0 8px 25px rgba(100, 200, 255, 0.4);
+        transform: translateY(-2px);
     }
     
     /* Progress bar */
     .stProgress > div > div > div > div {
         background: linear-gradient(90deg, #64c8ff, #ff6b9d);
+    }
+    
+    /* Disable scrolling on Streamlit sidebar */
+    .css-1d391kg {
+        overflow: hidden !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+    }
+    
+    .css-1d391kg .css-1v0mbdj {
+        overflow: hidden !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+    }
+    
+    /* Target Streamlit sidebar specifically */
+    [data-testid="stSidebar"] {
+        overflow: hidden !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+    }
+    
+    [data-testid="stSidebar"] > div {
+        overflow: hidden !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+    }
+    
+    /* Disable main page scrolling */
+    .main {
+        overflow: hidden !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+    }
+    
+    .main .block-container {
+        height: 100vh !important;
+        max-height: 100vh !important;
+        overflow-y: hidden !important;
+        padding-bottom: 0 !important;
+    }
+    
+    /* Force no scrolling on the entire page */
+    body, html {
+        overflow: hidden !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+    }
+    
+    /* Hide ALL scrollbars */
+    ::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+    
+    * {
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+    }
+    
+    /* Remove ALL link icons and decorations */
+    a[href]:hover::after,
+    a[href]:focus::after,
+    a[href]::after,
+    a::after {
+        display: none !important;
+        content: none !important;
+    }
+    
+    /* Remove all link decorations */
+    a, a:visited, a:active, a:focus, a:hover {
+        text-decoration: none !important;
+        color: inherit !important;
+    }
+    
+    /* Remove Streamlit's default link styling */
+    .stApp a {
+        text-decoration: none !important;
+        color: inherit !important;
+    }
+    
+    .stApp a:hover {
+        text-decoration: none !important;
+        color: inherit !important;
+    }
+    
+    /* Remove any pseudo-elements that might show link icons */
+    *::before,
+    *::after {
+        content: none !important;
     }
     
     /* Success message */
@@ -570,6 +684,17 @@ def get_preset_data():
     }
 
 def main():
+    # Force disable scrolling immediately
+    st.markdown("""
+    <script>
+    // Force disable scrolling
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.height = '100vh';
+    document.documentElement.style.height = '100vh';
+    </script>
+    """, unsafe_allow_html=True)
+    
     # Mission Control Header
     st.markdown('<h1 class="mission-header">ExoScope AI</h1>', unsafe_allow_html=True)
     st.markdown('<p class="mission-subtitle">Mission Control Center - Advanced Exoplanet Detection & Visualization System</p>', unsafe_allow_html=True)
@@ -653,17 +778,23 @@ def main():
         st.error("Failed to load model. Please check that the model files exist.")
         return
     
-    # Mission Control Panel
-    st.sidebar.markdown("""
-    <div style="text-align: center; margin-bottom: 2rem;">
-        <h2 style="color: #64c8ff; font-family: 'Orbitron', monospace;">MISSION CONTROL</h2>
-        <p style="color: #a0a0a0; font-size: 0.9rem;">Configure your exoplanet detection mission</p>
-    </div>
-    """, unsafe_allow_html=True)
+    # Initialize sidebar state
+    if 'sidebar_closed' not in st.session_state:
+        st.session_state.sidebar_closed = False
+    
+    # Mission Control Panel - Conditionally visible
+    if not st.session_state.sidebar_closed:
+        with st.sidebar:
+            st.markdown("""
+            <div style="text-align: center; margin-bottom: 1rem;">
+                <h2 style="color: #64c8ff; font-family: 'Orbitron', monospace; margin: 0;">MISSION CONTROL</h2>
+                <p style="color: #a0a0a0; font-size: 0.9rem; margin: 0;">Configure your exoplanet detection mission</p>
+            </div>
+            """, unsafe_allow_html=True)
     
     # Preset selection
     preset_data = get_preset_data()
-    selected_preset = st.sidebar.selectbox("Choose a preset:", ["Custom"] + list(preset_data.keys()))
+            selected_preset = st.selectbox("Choose a preset:", ["Custom"] + list(preset_data.keys()))
     
     # Initialize session state for preset loading
     if 'preset_loaded' not in st.session_state:
@@ -672,7 +803,7 @@ def main():
         st.session_state.selected_preset_name = None
     
     # Load preset button
-    if st.sidebar.button("Load Preset", disabled=(selected_preset == "Custom")):
+            if st.button("Load Preset", disabled=(selected_preset == "Custom")):
         st.session_state.preset_loaded = True
         st.session_state.selected_preset_name = selected_preset
     
@@ -699,20 +830,20 @@ def main():
         st.session_state.preset_loaded = False
         st.rerun()  # Force rerun to update the form
     
-    # Mission Configuration Form
-    with st.sidebar.form("mission_config_form"):
-        st.markdown("### Planetary Configuration")
-        pl_orbper = st.number_input('Orbital Period (days)', min_value=0.1, max_value=1000.0, value=st.session_state.form_values['pl_orbper'], step=1.0, format="%.2f", help="How long it takes the planet to orbit its star")
-        pl_rade = st.number_input('Planet Radius (Earth radii)', min_value=0.1, max_value=50.0, value=st.session_state.form_values['pl_rade'], step=0.1, format="%.2f", help="Size of the planet compared to Earth")
-        
-        st.markdown("### Stellar Configuration")
-        st_teff = st.number_input('Star Temperature (K)', min_value=2000, max_value=10000, value=st.session_state.form_values['st_teff'], step=50, help="Surface temperature of the host star")
-        st_rad = st.number_input('Star Radius (Solar radii)', min_value=0.1, max_value=10.0, value=st.session_state.form_values['st_rad'], step=0.1, format="%.2f", help="Size of the star compared to our Sun")
-        
-        st.markdown("### System Configuration")
-        sy_dist = st.number_input('System Distance (pc)', min_value=1, max_value=10000, value=st.session_state.form_values['sy_dist'], step=10, help="Distance to the planetary system in parsecs")
-        
-        submitted = st.form_submit_button("Launch Mission", use_container_width=True)
+            # Mission Configuration Form
+            with st.form("mission_config_form"):
+                st.markdown("### Planetary Configuration")
+                pl_orbper = st.number_input('Orbital Period (days)', min_value=0.1, max_value=1000.0, value=st.session_state.form_values['pl_orbper'], step=1.0, format="%.2f", help="How long it takes the planet to orbit its star")
+                pl_rade = st.number_input('Planet Radius (Earth radii)', min_value=0.1, max_value=50.0, value=st.session_state.form_values['pl_rade'], step=0.1, format="%.2f", help="Size of the planet compared to Earth")
+                
+                st.markdown("### Stellar Configuration")
+                st_teff = st.number_input('Star Temperature (K)', min_value=2000, max_value=10000, value=st.session_state.form_values['st_teff'], step=50, help="Surface temperature of the host star")
+                st_rad = st.number_input('Star Radius (Solar radii)', min_value=0.1, max_value=10.0, value=st.session_state.form_values['st_rad'], step=0.1, format="%.2f", help="Size of the star compared to our Sun")
+                
+                st.markdown("### System Configuration")
+                sy_dist = st.number_input('System Distance (pc)', min_value=1, max_value=10000, value=st.session_state.form_values['sy_dist'], step=10, help="Distance to the planetary system in parsecs")
+                
+                submitted = st.form_submit_button("Launch Mission", use_container_width=True)
     
     # Update session state with current form values
     st.session_state.form_values = {
@@ -722,9 +853,34 @@ def main():
         'st_rad': st_rad,
         'sy_dist': sy_dist
     }
+    else:
+        # Sidebar is closed - use default values
+        if 'form_values' not in st.session_state:
+            st.session_state.form_values = {
+                'pl_orbper': 365.25,
+                'pl_rade': 1.0,
+                'st_teff': 5778,
+                'st_rad': 1.0,
+                'sy_dist': 100
+            }
+        
+        pl_orbper = st.session_state.form_values['pl_orbper']
+        pl_rade = st.session_state.form_values['pl_rade']
+        st_teff = st.session_state.form_values['st_teff']
+        st_rad = st.session_state.form_values['st_rad']
+        sy_dist = st.session_state.form_values['sy_dist']
+        submitted = False
+    
+    # Show Mission Control toggle button when sidebar is closed
+    if st.session_state.sidebar_closed:
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col2:
+            if st.button("⚙️ Reopen Mission Control", use_container_width=True):
+                st.session_state.sidebar_closed = False
+                st.rerun()
     
     # Main content area - Give more space to animation
-    col1, col2 = st.columns([3, 1])
+    col1, col2 = st.columns([4, 1])
     
     # Initialize prediction result for animation tab
     prediction_result = None
@@ -778,12 +934,17 @@ def main():
             progress_bar.progress(100)
             time.sleep(0.5)
             
+            # Set session state to close sidebar
+            st.session_state.sidebar_closed = True
+            st.rerun()
+            
             # Clear progress indicators
             progress_bar.empty()
             status_text.empty()
             
             # Display results with enhanced storytelling
             if prediction == 1:
+<<<<<<< HEAD
                 # Integrated result card with confidence
                 confidence = max(probability) * 100
                 if confidence > 90:
@@ -843,6 +1004,35 @@ def main():
                         <p style="font-size: 1.2rem; color: #a0a0a0;">Congratulations, Space Explorer!</p>
                     </div>
                 </div>
+=======
+                # Navy screen fade effect - auto-remove after 2 seconds
+                st.markdown("""
+                <div id="fade-overlay" style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+                    z-index: 9999;
+                    animation: fadeInOut 2s ease-in-out forwards;
+                ">
+                    <div style="
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        text-align: center;
+                        color: white;
+                        font-family: 'Orbitron', monospace;
+                    ">
+                        <h1 style="font-size: 3rem; margin-bottom: 1rem; color: #64c8ff;">MISSION SUCCESS!</h1>
+                        <h2 style="font-size: 2rem; margin-bottom: 2rem; color: #ff6b9d;">EXOPLANET DETECTED!</h2>
+                        <p style="font-size: 1.2rem; color: #a0a0a0;">Congratulations, Space Explorer!</p>
+                    </div>
+                </div>
+                
+>>>>>>> e261681b99cc72b2c978bc320d365cece764ec24
                 <style>
                 @keyframes fadeInOut {
                     0% { opacity: 0; }
@@ -851,10 +1041,20 @@ def main():
                     100% { opacity: 0; visibility: hidden; }
                 }
                 </style>
+<<<<<<< HEAD
                 <script>
                 setTimeout(function() {
                     var overlay = document.getElementById('fade-overlay');
                     if (overlay) { overlay.style.display = 'none'; }
+=======
+                
+                <script>
+                setTimeout(function() {
+                    var overlay = document.getElementById('fade-overlay');
+                    if (overlay) {
+                        overlay.style.display = 'none';
+                    }
+>>>>>>> e261681b99cc72b2c978bc320d365cece764ec24
                 }, 2000);
                 </script>
                 """, unsafe_allow_html=True)
@@ -862,7 +1062,42 @@ def main():
                 # Mission success details
                 st.success("**Mission Accomplished!** This appears to be a real exoplanet based on our advanced AI analysis.")
             else:
-                st.markdown('<div class="no-detection-card"><h2>MISSION CONTINUES</h2><h3>No Exoplanet Detected</h3><p>This appears to be stellar variability or a false positive. Don\'t give up - space is full of mysteries waiting to be discovered!</p></div>', unsafe_allow_html=True)
+                # Navy screen fade effect for no detection - auto-remove after 2 seconds
+                st.markdown("""
+                <div id="fade-overlay-negative" style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+                    z-index: 9999;
+                    animation: fadeInOut 2s ease-in-out forwards;
+                ">
+                    <div style="
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        text-align: center;
+                        color: white;
+                        font-family: 'Orbitron', monospace;
+                    ">
+                        <h1 style="font-size: 3rem; margin-bottom: 1rem; color: #667eea;">MISSION CONTINUES</h1>
+                        <h2 style="font-size: 2rem; margin-bottom: 2rem; color: #a0a0a0;">No Exoplanet Detected</h2>
+                        <p style="font-size: 1.2rem; color: #a0a0a0;">Space is full of mysteries waiting to be discovered!</p>
+                    </div>
+                </div>
+                
+                <script>
+                setTimeout(function() {
+                    var overlay = document.getElementById('fade-overlay-negative');
+                    if (overlay) {
+                        overlay.style.display = 'none';
+                    }
+                }, 2000);
+                </script>
+                """, unsafe_allow_html=True)
                 
                 # Navy screen fade effect for no detection
                 st.markdown("""
@@ -893,6 +1128,7 @@ def main():
                 
                 st.info("**Analysis Complete:** This signal appears to be stellar variability or instrumental noise. Try different parameters to find your exoplanet!")
             
+<<<<<<< HEAD
             # Confidence is now integrated in the result card above
             
             # Auto-close sidebar after prediction
@@ -913,6 +1149,77 @@ def main():
             
             # Smart Animation System - Auto-launch based on prediction
             if prediction == 1:
+=======
+            # Integrated Mission Result and Confidence display
+            confidence = max(probability) * 100
+            if prediction == 1:
+                if confidence > 90:
+                    confidence_text = "Excellent detection quality!"
+                    confidence_color = "#00ff88"
+                elif confidence > 70:
+                    confidence_text = "Good detection quality"
+                    confidence_color = "#64c8ff"
+                else:
+                    confidence_text = "Uncertain detection"
+                    confidence_color = "#ffaa00"
+                
+                st.markdown(f'''
+                <div class="integrated-result-card" style="
+                    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+                    border: 2px solid {confidence_color};
+                    border-radius: 15px;
+                    padding: 2rem;
+                    margin: 1rem 0;
+                    text-align: center;
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+                    transition: all 0.3s ease;
+                ">
+                    <h2 style="color: #64c8ff; font-family: 'Orbitron', monospace; margin-bottom: 1rem;">MISSION SUCCESS!</h2>
+                    <h3 style="color: #ff6b9d; font-family: 'Orbitron', monospace; margin-bottom: 1.5rem;">EXOPLANET DETECTED!</h3>
+                    <div style="margin: 1.5rem 0;">
+                        <p style="font-size: 3rem; margin: 0; color: {confidence_color}; font-weight: bold;">{confidence:.1f}%</p>
+                        <p style="color: #a0a0a0; margin: 0.5rem 0;">Mission Confidence</p>
+                        <p style="color: {confidence_color}; margin: 0;">{confidence_text}</p>
+                    </div>
+                    <p style="color: #a0a0a0; margin: 0;">Congratulations, Space Explorer! You have successfully discovered a new world beyond our solar system!</p>
+                </div>
+                ''', unsafe_allow_html=True)
+            else:
+                if confidence > 70:
+                    confidence_text = "High confidence in negative result"
+                    confidence_color = "#667eea"
+                elif confidence > 50:
+                    confidence_text = "Moderate confidence in negative result"
+                    confidence_color = "#a0a0a0"
+                else:
+                    confidence_text = "Low confidence - uncertain result"
+                    confidence_color = "#ffaa00"
+                
+                st.markdown(f'''
+                <div class="integrated-result-card" style="
+                    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+                    border: 2px solid {confidence_color};
+                    border-radius: 15px;
+                    padding: 2rem;
+                    margin: 1rem 0;
+                    text-align: center;
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+                    transition: all 0.3s ease;
+                ">
+                    <h2 style="color: #667eea; font-family: 'Orbitron', monospace; margin-bottom: 1rem;">MISSION CONTINUES</h2>
+                    <h3 style="color: #a0a0a0; font-family: 'Orbitron', monospace; margin-bottom: 1.5rem;">No Exoplanet Detected</h3>
+                    <div style="margin: 1.5rem 0;">
+                        <p style="font-size: 3rem; margin: 0; color: {confidence_color}; font-weight: bold;">{confidence:.1f}%</p>
+                        <p style="color: #a0a0a0; margin: 0.5rem 0;">Analysis Confidence</p>
+                        <p style="color: {confidence_color}; margin: 0;">{confidence_text}</p>
+                    </div>
+                    <p style="color: #a0a0a0; margin: 0;">This appears to be stellar variability or a false positive. Don't give up - space is full of mysteries waiting to be discovered!</p>
+                </div>
+                ''', unsafe_allow_html=True)
+            
+            # Smart Animation System - Auto-launch based on prediction
+            if prediction == 1:
+>>>>>>> e261681b99cc72b2c978bc320d365cece764ec24
                 # Exoplanet detected - show exoplanet simulation
                 tab1, tab2 = st.tabs(["View Animation", "Light Curve"])
                 
@@ -926,7 +1233,7 @@ def main():
                     - Scroll to zoom in/out for detailed views
                     - Try different viewing modes: Earth View, Space View, Top View, Side View
                     - Watch for the transit indicator when the planet crosses the star
-                    - Press 'B' to switch between single and binary star systems
+                    - Press SPACE to play/pause, R to reset view
                     """)
                     
                     # Load and display the enhanced Three.js animation
@@ -941,6 +1248,7 @@ def main():
                         # Calculate transit duration for animation
                         transit_duration_hours = df_features['transit_duration'].iloc[0]
                         
+<<<<<<< HEAD
                         # Create JavaScript to update animation parameters for exoplanet
                         js_params = f"""
                         <script>
@@ -958,6 +1266,34 @@ def main():
                                 }});
                             }}
                         }});
+=======
+                        # Create JavaScript parameters for EXOPLANET simulation (positive prediction)
+                        js_params = f"""
+                        <script>
+                        // Set parameters for exoplanet simulation (positive prediction)
+                        window.animationParams = {{
+                            pl_orbper: {pl_orbper},
+                            pl_rade: {pl_rade},
+                            st_teff: {st_teff},
+                            st_rad: {st_rad},
+                            sy_dist: {sy_dist},
+                            transit_duration: {df_features['transit_duration'].iloc[0]},
+                            transit_depth: {df_features['transit_depth'].iloc[0]},
+                            rp_rs_ratio: {df_features['rp_rs_ratio'].iloc[0]},
+                            snr_proxy: {df_features['snr_proxy'].iloc[0]},
+                            transit_probability: {df_features['transit_probability'].iloc[0]},
+                            stellar_luminosity: {df_features['stellar_luminosity'].iloc[0]},
+                            // Force exoplanet mode for positive predictions
+                            binary_star_mode: false,
+                            show_planet: true,
+                            isBinary: false
+                        }};
+                        
+                        // Update parameters when page loads
+                        if (typeof updateParameters === 'function') {{
+                            updateParameters(window.animationParams);
+                        }}
+>>>>>>> e261681b99cc72b2c978bc320d365cece764ec24
                         </script>
                         """
                         
@@ -975,20 +1311,20 @@ def main():
                             st.markdown("### Key Parameters")
                             param_col1, param_col2, param_col3 = st.columns(3)
                             with param_col1:
-                                st.metric("Transit Duration", f"{df_features['transit_duration'].iloc[0]:.2f} hours")
-                                st.metric("Transit Depth", f"{df_features['transit_depth'].iloc[0]:.6f}")
+                            st.metric("Transit Duration", f"{df_features['transit_duration'].iloc[0]:.2f} hours")
+                            st.metric("Transit Depth", f"{df_features['transit_depth'].iloc[0]:.6f}")
                             with param_col2:
-                                st.metric("Orbital Period", f"{pl_orbper:.2f} days")
-                                st.metric("Planet Radius", f"{pl_rade:.2f} R⊕")
+                            st.metric("Orbital Period", f"{pl_orbper:.2f} days")
+                            st.metric("Planet Radius", f"{pl_rade:.2f} R⊕")
                             with param_col3:
-                                st.metric("Star Temperature", f"{st_teff:.0f} K")
-                                st.metric("Star Radius", f"{st_rad:.2f} R☉")
+                            st.metric("Star Temperature", f"{st_teff:.0f} K")
+                            st.metric("Star Radius", f"{st_rad:.2f} R☉")
                             
                             st.markdown("### Advanced Physics")
                             physics_col1, physics_col2 = st.columns(2)
                             with physics_col1:
-                                st.metric("Planet-to-Star Ratio", f"{df_features['rp_rs_ratio'].iloc[0]:.6f}")
-                                st.metric("System Distance", f"{sy_dist:.0f} pc")
+                            st.metric("Planet-to-Star Ratio", f"{df_features['rp_rs_ratio'].iloc[0]:.6f}")
+                            st.metric("System Distance", f"{sy_dist:.0f} pc")
                             with physics_col2:
                                 st.metric("Detection SNR", f"{(df_features['snr_proxy'].iloc[0] * 100):.1f}")
                                 st.metric("Transit Probability", f"{df_features['transit_probability'].iloc[0]:.4f}")
@@ -1024,6 +1360,7 @@ def main():
                 # Mission briefing for binary star animation
                 st.info("""
                 **Mission Control Instructions:**
+<<<<<<< HEAD
                 - Use mouse to rotate camera and explore the binary system
                 - Scroll to zoom in/out for detailed views
                 - Watch the stellar variability that created the false positive signal
@@ -1031,6 +1368,16 @@ def main():
                 """)
                 
                 # Load and display the binary star animation
+=======
+                - Use mouse to rotate camera and explore the binary star system
+                - Scroll to zoom in/out for detailed views
+                - Try different viewing modes: Earth View, Space View, Top View, Side View
+                - Watch for stellar variability and binary interactions
+                - Press SPACE to play/pause, R to reset view
+                """)
+                
+                # Load and display the enhanced Three.js animation with binary star mode
+>>>>>>> e261681b99cc72b2c978bc320d365cece764ec24
                 try:
                     # Read the enhanced animation template
                     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -1039,6 +1386,7 @@ def main():
                     with open(animation_path, 'r', encoding='utf-8') as f:
                         animation_html = f.read()
                     
+<<<<<<< HEAD
                     # Create JavaScript to update animation parameters for binary star
                     js_params = f"""
                     <script>
@@ -1055,6 +1403,33 @@ def main():
                             }});
                         }}
                     }});
+=======
+                    # Create JavaScript parameters for binary star system
+                    js_params = f"""
+                    <script>
+                    // Set binary star mode for negative prediction
+                    window.animationParams = {{
+                        pl_orbper: {pl_orbper},
+                        pl_rade: {pl_rade},
+                        st_teff: {st_teff},
+                        st_rad: {st_rad},
+                        sy_dist: {sy_dist},
+                        transit_duration: {df_features['transit_duration'].iloc[0]},
+                        transit_depth: {df_features['transit_depth'].iloc[0]},
+                        rp_rs_ratio: {df_features['rp_rs_ratio'].iloc[0]},
+                        snr_proxy: {df_features['snr_proxy'].iloc[0]},
+                        transit_probability: {df_features['transit_probability'].iloc[0]},
+                        stellar_luminosity: {df_features['stellar_luminosity'].iloc[0]},
+                        // Force binary star mode for negative predictions
+                        binary_star_mode: true,
+                        show_planet: false
+                    }};
+                    
+                    // Update parameters when page loads
+                    if (typeof updateParameters === 'function') {{
+                        updateParameters(window.animationParams);
+                    }}
+>>>>>>> e261681b99cc72b2c978bc320d365cece764ec24
                     </script>
                     """
                     
@@ -1062,8 +1437,41 @@ def main():
                     full_animation_html = animation_html + js_params
                     
                     # Display the animation in an iframe with 1920x1080 resolution
+<<<<<<< HEAD
                     components.html(full_animation_html, height=1080)
                     
+=======
+                    components.html(full_animation_html, height=1080, scrolling=False)
+                    
+                    # Mission briefing for binary star system
+                    st.success("**Binary Star System Active!** Observe the stellar variability that created the false positive signal!")
+                    
+                    # Binary star system information
+                    with st.expander("Binary Star System Details", expanded=False):
+                        st.markdown("### Stellar System Analysis")
+                        binary_col1, binary_col2, binary_col3 = st.columns(3)
+                        with binary_col1:
+                            st.metric("Primary Star Temperature", f"{st_teff:.0f} K")
+                            st.metric("Primary Star Radius", f"{st_rad:.2f} R☉")
+                        with binary_col2:
+                            st.metric("System Distance", f"{sy_dist:.0f} pc")
+                            st.metric("Stellar Luminosity", f"{df_features['stellar_luminosity'].iloc[0]:.3f} L☉")
+                        with binary_col3:
+                            st.metric("Variability Signal", "Detected")
+                            st.metric("False Positive Rate", f"{(1-max(probability))*100:.1f}%")
+                        
+                        st.markdown("### Why Binary Star Systems Cause False Positives")
+                        st.markdown("""
+                        Binary star systems can create signals that mimic exoplanet transits:
+                        - **Stellar Eclipses**: One star passing in front of another
+                        - **Stellar Variability**: Pulsations, spots, or flares
+                        - **Gravitational Effects**: Tidal interactions between stars
+                        - **Orbital Motion**: Changing brightness due to orbital mechanics
+                        
+                        Our AI correctly identified this as stellar variability rather than an exoplanet!
+                        """)
+                
+>>>>>>> e261681b99cc72b2c978bc320d365cece764ec24
                 except Exception as e:
                     st.error(f"Error loading binary star animation: {e}")
                     st.info("Binary star animation will be available once the template file is properly set up.")
