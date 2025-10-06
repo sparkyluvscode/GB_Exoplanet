@@ -6,10 +6,11 @@ import os
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import streamlit.components.v1 as components
 
 # Custom CSS for better styling
 st.set_page_config(
-    page_title="Team Grizzlies - Scientifically Accurate Transit Exoplanet Hunter",
+    page_title="ExoScope AI - Exoplanet Detector",
     page_icon="🌌",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -334,7 +335,7 @@ def get_preset_data():
 
 def main():
     # Header
-    st.markdown('<h1 class="main-header">🌌 Team Grizzlies - Scientifically Accurate Transit Exoplanet Hunter</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="main-header">ExoScope AI - State of the Art Exoplanet Detector</h1>', unsafe_allow_html=True)
     
     # Load model
     model, features, imputer = load_corrected_model()
@@ -417,7 +418,7 @@ def main():
     df_features_result = None
     
     with col1:
-        st.header("🎯 Scientifically Accurate Transit Analysis")
+        st.header("Exoplanet or not?")
         
         if submitted or (st.session_state.selected_preset_name and st.session_state.selected_preset_name != "Custom"):
             # Create features
@@ -455,30 +456,73 @@ def main():
                 with tab1:
                     st.markdown('<div class="animation-card"><h2>🎬 Exoplanet Transit Animation</h2><h3>Watch your exoplanet transit its host star!</h3></div>', unsafe_allow_html=True)
                     
-                    # Animation placeholder (you can replace with actual animation)
-                    st.markdown("")
-                    
-                    # Display animation controls
-                    col1_anim, col2_anim, col3_anim = st.columns(3)
-                    with col1_anim:
-                        if st.button("▶️ Play Animation", key="play_anim"):
-                            st.success("Animation would play here!")
-                    with col2_anim:
-                        if st.button("⏸️ Pause", key="pause_anim"):
-                            st.info("Animation paused")
-                    with col3_anim:
-                        if st.button("🔄 Reset", key="reset_anim"):
-                            st.info("Animation reset")
-                    
-                    # Display transit parameters for animation
-                    st.markdown("### 🌟 Animation Parameters")
-                    anim_col1, anim_col2 = st.columns(2)
-                    with anim_col1:
-                        st.metric("Transit Duration", f"{df_features['transit_duration'].iloc[0]:.2f} hours")
-                        st.metric("Transit Depth", f"{df_features['transit_depth'].iloc[0]:.6f}")
-                    with anim_col2:
-                        st.metric("Orbital Period", f"{pl_orbper:.2f} days")
-                        st.metric("Planet Radius", f"{pl_rade:.2f} R⊕")
+                    # Load and display the Three.js animation
+                    try:
+                        # Read the animation template
+                        script_dir = os.path.dirname(os.path.abspath(__file__))
+                        animation_path = os.path.join(script_dir, 'animation_template.html')
+                        
+                        with open(animation_path, 'r', encoding='utf-8') as f:
+                            animation_html = f.read()
+                        
+                        # Calculate transit duration for animation
+                        transit_duration_hours = df_features['transit_duration'].iloc[0]
+                        
+                        # Create JavaScript to update animation parameters
+                        js_params = f"""
+                        <script>
+                        // Update animation parameters when the page loads
+                        window.addEventListener('load', function() {{
+                            if (window.updateAnimationParameters) {{
+                                window.updateAnimationParameters({{
+                                    orbitalPeriod: {pl_orbper},
+                                    planetRadius: {pl_rade},
+                                    starRadius: {st_rad},
+                                    starTemperature: {st_teff},
+                                    transitDuration: {transit_duration_hours}
+                                }});
+                            }}
+                        }});
+                        </script>
+                        """
+                        
+                        # Combine the animation HTML with parameter updates
+                        full_animation_html = animation_html + js_params
+                        
+                        # Display the animation in an iframe
+                        components.html(full_animation_html, height=600, scrolling=False)
+                        
+                        # Display animation controls
+                        st.markdown("### 🎮 Animation Controls")
+                        st.markdown("""
+                        - **Mouse**: Drag to rotate camera view
+                        - **Scroll**: Zoom in/out
+                        - **Controls**: Use the buttons in the animation to play, pause, or reset
+                        """)
+                        
+                        # Display transit parameters for animation
+                        st.markdown("### 🌟 Animation Parameters")
+                        anim_col1, anim_col2 = st.columns(2)
+                        with anim_col1:
+                            st.metric("Transit Duration", f"{df_features['transit_duration'].iloc[0]:.2f} hours")
+                            st.metric("Transit Depth", f"{df_features['transit_depth'].iloc[0]:.6f}")
+                        with anim_col2:
+                            st.metric("Orbital Period", f"{pl_orbper:.2f} days")
+                            st.metric("Planet Radius", f"{pl_rade:.2f} R⊕")
+                        
+                        # Additional animation information
+                        st.markdown("### 📊 Animation Details")
+                        info_col1, info_col2 = st.columns(2)
+                        with info_col1:
+                            st.metric("Star Temperature", f"{st_teff:.0f} K")
+                            st.metric("Star Radius", f"{st_rad:.2f} R☉")
+                        with info_col2:
+                            st.metric("Planet-to-Star Ratio", f"{df_features['rp_rs_ratio'].iloc[0]:.6f}")
+                            st.metric("System Distance", f"{sy_dist:.0f} pc")
+                        
+                    except Exception as e:
+                        st.error(f"Error loading animation: {e}")
+                        st.info("Animation will be available once the template file is properly set up.")
                 
                 with tab2:
                     st.markdown('<div class="animation-card"><h2>📈 Transit Light Curve</h2><h3>Observe the brightness variation during transit</h3></div>', unsafe_allow_html=True)
@@ -552,21 +596,21 @@ def main():
     with col2:
         st.header("📊 Model Information")
         
-        st.markdown('<div class="metric-card"><h3>🚀 Scientifically Accurate Model</h3><p>96.74% Accuracy</p></div>', unsafe_allow_html=True)
-        st.markdown('<div class="metric-card"><h3>⚡ Ultra-Fast</h3><p>306,825 predictions/sec</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="metric-card"><h3>🎯Crazy Accurate!</h3><p>An accuracy of 96.74% while being trained on tens of thousands of exoplanets</p></div>', unsafe_allow_html=True)
+        # st.markdown('<div class="metric-card"><h3>⚡ Ultra-Fast</h3><p>306,825 predictions/sec</p></div>', unsafe_allow_html=True)
         st.markdown('<div class="metric-card"><h3>🔬 Transit Method</h3><p>Kepler, K2, TESS compatible</p></div>', unsafe_allow_html=True)
         
         st.markdown('<div class="spacer"></div>', unsafe_allow_html=True)
         
-        st.subheader("🎯 Scientific Advantages")
-        st.markdown("""
-        - ✅ **High Accuracy**: 96.74%
-        - ✅ **Physically Accurate**: Correct Earth/Solar radii conversion
-        - ✅ **No Mass Required**: Uses only observable parameters
-        - ✅ **Proper Transit Physics**: Accurate duration & probability
-        - ✅ **Realistic SNR**: Distance-dependent calculations
-        - ✅ **Perfect for Surveys**: Kepler, K2, TESS compatible
-        """)
+        # st.subheader("Scientific Advantages")
+        # st.markdown("""
+        # - ✅ **High Accuracy**: 96.74%
+        # - ✅ **Physically Accurate**: Correct Earth/Solar radii conversion
+        # - ✅ **No Mass Required**: Uses only observable parameters
+        # - ✅ **Proper Transit Physics**: Accurate duration & probability
+        # - ✅ **Realistic SNR**: Distance-dependent calculations
+        # - ✅ **Perfect for Surveys**: Kepler, K2, TESS compatible
+        # """)
         
         st.subheader("📈 Performance Metrics")
         st.metric("Test Accuracy", "96.74%")
