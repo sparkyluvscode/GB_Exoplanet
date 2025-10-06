@@ -19,6 +19,10 @@
             height: 100vh;
             position: relative;
             background: radial-gradient(ellipse at center, #1a1a2e 0%, #0c0c0c 100%);
+            aspect-ratio: 16/9;
+            max-height: 1080px;
+            max-width: 1920px;
+            margin: 0 auto;
         }
         
         #mission-header {
@@ -364,15 +368,33 @@
             transitDuration: 0.0,
             isPlaying: false,
             isBinary: false,
-            viewingMode: 'space'
+            viewingMode: 'space',
+            binary_star_mode: false,
+            show_planet: true
         };
 
-        // Three.js setup
+        // Three.js setup with 1920x1080 aspect ratio
         const scene = new THREE.Scene();
-        const width = window.innerWidth;
-        const height = window.innerHeight;
+        const targetWidth = 1920;
+        const targetHeight = 1080;
+        const aspectRatio = targetWidth / targetHeight;
         
-        const camera = new THREE.PerspectiveCamera(60, width / height, 1, 1000000);
+        // Calculate actual dimensions based on container
+        const container = document.getElementById('animation-container');
+        const containerWidth = container.clientWidth;
+        const containerHeight = container.clientHeight;
+        
+        // Maintain 16:9 aspect ratio
+        let width, height;
+        if (containerWidth / containerHeight > aspectRatio) {
+            height = containerHeight;
+            width = height * aspectRatio;
+        } else {
+            width = containerWidth;
+            height = width / aspectRatio;
+        }
+        
+        const camera = new THREE.PerspectiveCamera(60, aspectRatio, 1, 1000000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(width, height);
         renderer.setClearColor(0x000000, 1);
@@ -478,20 +500,22 @@
                 if (obj) scene.remove(obj);
             });
 
-            // Create planet
-            const planetGeometry = new THREE.SphereGeometry(derivedParams.planetSize, 64, 64);
-            const planetMaterial = new THREE.MeshStandardMaterial({ 
-                map: terrestrialTexture,
-                roughness: 0.8,
-                metalness: 0.1
-            });
-            planet = new THREE.Mesh(planetGeometry, planetMaterial);
-            planet.castShadow = true;
-            planet.receiveShadow = true;
-            planet.name = "planet";
-            scene.add(planet);
+            // Create planet (only if show_planet is true)
+            if (missionParams.show_planet !== false) {
+                const planetGeometry = new THREE.SphereGeometry(derivedParams.planetSize, 64, 64);
+                const planetMaterial = new THREE.MeshStandardMaterial({ 
+                    map: terrestrialTexture,
+                    roughness: 0.8,
+                    metalness: 0.1
+                });
+                planet = new THREE.Mesh(planetGeometry, planetMaterial);
+                planet.castShadow = true;
+                planet.receiveShadow = true;
+                planet.name = "planet";
+                scene.add(planet);
+            }
 
-            if (!missionParams.isBinary) {
+            if (!missionParams.isBinary && !missionParams.binary_star_mode) {
                 // Single star system
                 const starGeometry = new THREE.SphereGeometry(derivedParams.starSize, 64, 64);
                 const starMaterial = new THREE.MeshStandardMaterial({ 
@@ -531,7 +555,7 @@
                 orbitRing.rotation.x = -Math.PI / 2;
                 orbitRing.name = "orbit";
                 scene.add(orbitRing);
-            } else {
+            } else if (missionParams.isBinary || missionParams.binary_star_mode) {
                 // Binary star system
                 const star1Geometry = new THREE.SphereGeometry(derivedParams.starSize * 0.6, 64, 64);
                 const star1Material = new THREE.MeshStandardMaterial({ 
@@ -675,7 +699,7 @@
                 }
             }
 
-            if (missionParams.isBinary) {
+            if (missionParams.isBinary || missionParams.binary_star_mode) {
                 // Binary star animation
                 if (binaryStar1) {
                     binaryStar1.rotation.y -= 0.02;
