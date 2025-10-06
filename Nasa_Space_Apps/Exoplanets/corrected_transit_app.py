@@ -260,28 +260,63 @@ st.markdown("""
     
     /* Disable scrolling on main page */
     .main {
-        overflow: hidden;
-        height: 100vh;
+        overflow: hidden !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
     }
     
     .main .block-container {
-        height: 100vh;
-        overflow-y: auto;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        overflow-y: hidden !important;
+        padding-bottom: 0 !important;
     }
     
-    /* Remove link icons on hover */
-    a[href]:hover::after,
-    a[href]:focus::after {
+    /* Force no scrolling on the entire page */
+    body {
+        overflow: hidden !important;
+        height: 100vh !important;
+    }
+    
+    /* Hide scrollbars */
+    ::-webkit-scrollbar {
         display: none !important;
     }
     
-    /* Remove all link decorations */
-    a {
-        text-decoration: none !important;
+    * {
+        scrollbar-width: none !important;
     }
     
-    a:hover {
+    /* Remove ALL link icons and decorations */
+    a[href]:hover::after,
+    a[href]:focus::after,
+    a[href]::after,
+    a::after {
+        display: none !important;
+        content: none !important;
+    }
+    
+    /* Remove all link decorations */
+    a, a:visited, a:active, a:focus, a:hover {
         text-decoration: none !important;
+        color: inherit !important;
+    }
+    
+    /* Remove Streamlit's default link styling */
+    .stApp a {
+        text-decoration: none !important;
+        color: inherit !important;
+    }
+    
+    .stApp a:hover {
+        text-decoration: none !important;
+        color: inherit !important;
+    }
+    
+    /* Remove any pseudo-elements that might show link icons */
+    *::before,
+    *::after {
+        content: none !important;
     }
     
     /* Success message */
@@ -544,6 +579,17 @@ def get_preset_data():
     }
 
 def main():
+    # Force disable scrolling immediately
+    st.markdown("""
+    <script>
+    // Force disable scrolling
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.height = '100vh';
+    document.documentElement.style.height = '100vh';
+    </script>
+    """, unsafe_allow_html=True)
+    
     # Mission Control Header
     st.markdown('<h1 class="mission-header">ExoScope AI</h1>', unsafe_allow_html=True)
     st.markdown('<p class="mission-subtitle">Mission Control Center - Advanced Exoplanet Detection & Visualization System</p>', unsafe_allow_html=True)
@@ -796,25 +842,42 @@ def main():
             # Auto-close Mission Control with animation
             st.markdown("""
             <script>
-            setTimeout(function() {
-                // Find the sidebar and add closing animation
+            // Force close Mission Control after prediction
+            function closeMissionControl() {
                 const sidebar = document.querySelector('[data-testid="stSidebar"]');
                 const toggleButton = document.getElementById('mission-control-toggle');
                 
                 if (sidebar) {
-                    sidebar.style.transition = 'transform 0.5s ease-in-out';
+                    // Add closing animation
+                    sidebar.style.transition = 'transform 0.8s ease-in-out, opacity 0.8s ease-in-out';
                     sidebar.style.transform = 'translateX(-100%)';
+                    sidebar.style.opacity = '0';
                     
                     // After animation, hide it completely and show toggle button
                     setTimeout(function() {
                         sidebar.style.display = 'none';
+                        sidebar.style.visibility = 'hidden';
                         if (toggleButton) {
                             toggleButton.style.display = 'block';
+                            toggleButton.style.animation = 'fadeIn 0.5s ease-in-out';
                         }
-                    }, 500);
+                    }, 800);
                 }
-            }, 1000); // Wait 1 second after mission complete
+            }
+            
+            // Close immediately when this script runs
+            setTimeout(closeMissionControl, 500);
+            
+            // Also try to close after a longer delay as backup
+            setTimeout(closeMissionControl, 2000);
             </script>
+            
+            <style>
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(-10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            </style>
             """, unsafe_allow_html=True)
             
             # Clear progress indicators
