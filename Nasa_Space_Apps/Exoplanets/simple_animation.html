@@ -113,8 +113,10 @@
         let sunTexture = null;
         let terrestrialTexture = null;
         
-        // Load sun texture
-        textureLoader.load('sun.webp', 
+        // Load sun texture with absolute path
+        const sunTexturePath = window.location.href.replace('corrected_transit_app.py', '') + 'sun.webp';
+        console.log('Loading sun texture from:', sunTexturePath);
+        textureLoader.load(sunTexturePath, 
             (texture) => {
                 console.log('Sun texture loaded successfully');
                 sunTexture = texture;
@@ -127,8 +129,10 @@
             }
         );
         
-        // Load terrestrial texture
-        textureLoader.load('terrestrial.jpg',
+        // Load terrestrial texture with absolute path
+        const terrestrialTexturePath = window.location.href.replace('corrected_transit_app.py', '') + 'terrestrial.jpg';
+        console.log('Loading terrestrial texture from:', terrestrialTexturePath);
+        textureLoader.load(terrestrialTexturePath,
             (texture) => {
                 console.log('Terrestrial texture loaded successfully');
                 terrestrialTexture = texture;
@@ -179,6 +183,28 @@
         });
         const star = new THREE.Mesh(starGeometry, starMaterial);
         scene.add(star);
+
+        // Create corona around the sun
+        const coronaGeometry = new THREE.SphereGeometry(2.3, 32, 32);
+        const coronaMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xffaa00,
+            transparent: true,
+            opacity: 0.3,
+            side: THREE.BackSide
+        });
+        const corona = new THREE.Mesh(coronaGeometry, coronaMaterial);
+        scene.add(corona);
+
+        // Create outer glow layer
+        const outerGlowGeometry = new THREE.SphereGeometry(2.6, 16, 16);
+        const outerGlowMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xffaa00,
+            transparent: true,
+            opacity: 0.1,
+            side: THREE.BackSide
+        });
+        const outerGlow = new THREE.Mesh(outerGlowGeometry, outerGlowMaterial);
+        scene.add(outerGlow);
 
         // Create planet
         const planetGeometry = new THREE.SphereGeometry(0.3, 32, 32);
@@ -251,6 +277,21 @@
 
             // Rotate planet
             planet.rotation.y += 0.02;
+
+            // Animate corona
+            if (corona) {
+                corona.rotation.y -= 0.005;
+                // Pulsing corona effect
+                const pulse = Math.sin(elapsed * 0.001) * 0.1 + 0.3;
+                corona.material.opacity = pulse;
+            }
+
+            // Animate outer glow
+            if (outerGlow) {
+                outerGlow.rotation.y += 0.002;
+                const glowPulse = Math.sin(elapsed * 0.0005) * 0.05 + 0.1;
+                outerGlow.material.opacity = glowPulse;
+            }
 
             // Check for transit (simple)
             const isInTransit = Math.abs(planet.position.x) < 2.5 && Math.abs(planet.position.z) < 2.5;
@@ -359,6 +400,14 @@
                 star.material.emissive.setHex(starColor);
                 star.material.emissiveIntensity = 0.2;
             }
+
+            // Update corona and glow colors
+            if (corona) {
+                corona.material.color.setHex(starColor);
+            }
+            if (outerGlow) {
+                outerGlow.material.color.setHex(starColor);
+            }
             
             // Update planet size
             const planetSize = Math.max(0.1, Math.min(1.0, animationParams.planetRadius * 0.2));
@@ -367,6 +416,14 @@
             // Update star size
             const starSize = Math.max(1.0, Math.min(5.0, animationParams.starRadius * 2));
             star.geometry = new THREE.SphereGeometry(starSize, 32, 32);
+            
+            // Update corona size
+            if (corona) {
+                corona.geometry = new THREE.SphereGeometry(starSize * 1.15, 32, 32);
+            }
+            if (outerGlow) {
+                outerGlow.geometry = new THREE.SphereGeometry(starSize * 1.3, 16, 16);
+            }
             
             // Update orbit radius
             const orbitRadius = Math.max(5, Math.min(20, Math.sqrt(animationParams.orbitalPeriod) * 0.5));
