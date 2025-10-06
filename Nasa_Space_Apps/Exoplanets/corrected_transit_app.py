@@ -58,6 +58,16 @@ st.markdown("""
         font-weight: 300;
     }
     
+    .mission-credits {
+        font-family: 'Exo 2', sans-serif;
+        font-size: 0.9rem;
+        color: #8a8a8a;
+        text-align: center;
+        margin-top: -0.5rem;
+        margin-bottom: 2rem;
+        font-weight: 300;
+    }
+    
     /* Mission Control Cards */
     .mission-card {
         background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(20,20,40,0.9));
@@ -498,6 +508,7 @@ def main():
     # Mission Control Header
     st.markdown('<h1 class="mission-header">ExoScope AI</h1>', unsafe_allow_html=True)
     st.markdown('<p class="mission-subtitle">Mission Control Center - Advanced Exoplanet Detection & Visualization System</p>', unsafe_allow_html=True)
+    st.markdown('<p class="mission-credits">Built by Pranil Raichura, Bhuvan Datta, Ankith Gundimeda, Alex Dennis, Makari Shenouda, and Naman Raichura</p>', unsafe_allow_html=True)
     
     # Compact mission briefing
     with st.expander("Mission Briefing", expanded=False):
