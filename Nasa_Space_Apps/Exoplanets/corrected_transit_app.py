@@ -499,8 +499,8 @@ def main():
     st.markdown('<h1 class="mission-header">ExoScope AI</h1>', unsafe_allow_html=True)
     st.markdown('<p class="mission-subtitle">Mission Control Center - Advanced Exoplanet Detection & Visualization System</p>', unsafe_allow_html=True)
     
-    # Mission briefing
-    with st.expander("🚀 Mission Briefing", expanded=True):
+    # Compact mission briefing
+    with st.expander("🚀 Mission Briefing", expanded=False):
         st.markdown("""
         **Welcome to Mission Control, Space Explorer!**
         
@@ -588,14 +588,14 @@ def main():
         - Adaptive layouts
         """)
     
-    # Mission status
+    # Compact mission status
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.markdown('<div class="mission-card"><h3>🎯 Mission Status</h3><p>Ready for Launch</p></div>', unsafe_allow_html=True)
+        st.metric("Mission Status", "Ready", "🚀")
     with col2:
-        st.markdown('<div class="mission-card"><h3>🔬 AI Accuracy</h3><p>96.74% Detection Rate</p></div>', unsafe_allow_html=True)
+        st.metric("AI Accuracy", "96.74%", "±0.5%")
     with col3:
-        st.markdown('<div class="mission-card"><h3>🌌 Systems Online</h3><p>All Systems Go</p></div>', unsafe_allow_html=True)
+        st.metric("Systems", "Online", "✅")
     
     # Load model
     model, features, imputer = load_corrected_model()
@@ -674,8 +674,8 @@ def main():
         'sy_dist': sy_dist
     }
     
-    # Main content area
-    col1, col2 = st.columns([2, 1])
+    # Main content area - Give more space to animation
+    col1, col2 = st.columns([3, 1])
     
     # Initialize prediction result for animation tab
     prediction_result = None
@@ -806,34 +806,34 @@ def main():
                         # Combine the animation HTML with parameter updates
                         full_animation_html = animation_html + js_params
                         
-                        # Display the animation in an iframe with larger height
-                        components.html(full_animation_html, height=700, scrolling=False)
+                        # Display the animation in an iframe with much larger height
+                        components.html(full_animation_html, height=900, scrolling=False)
                         
                         # Mission success celebration
                         st.success("🎉 **Mission Visualization Active!** Your exoplanet is now being simulated in real-time!")
                         
-                        # Display transit parameters for animation
-                        st.markdown("### 🌟 Mission Parameters")
-                        anim_col1, anim_col2, anim_col3 = st.columns(3)
-                        with anim_col1:
-                            st.markdown(f'<div class="feature-card"><strong>Transit Duration:</strong><br>{df_features["transit_duration"].iloc[0]:.2f} hours</div>', unsafe_allow_html=True)
-                            st.markdown(f'<div class="feature-card"><strong>Transit Depth:</strong><br>{df_features["transit_depth"].iloc[0]:.6f}</div>', unsafe_allow_html=True)
-                        with anim_col2:
-                            st.markdown(f'<div class="feature-card"><strong>Orbital Period:</strong><br>{pl_orbper:.2f} days</div>', unsafe_allow_html=True)
-                            st.markdown(f'<div class="feature-card"><strong>Planet Radius:</strong><br>{pl_rade:.2f} R⊕</div>', unsafe_allow_html=True)
-                        with anim_col3:
-                            st.markdown(f'<div class="feature-card"><strong>Star Temperature:</strong><br>{st_teff:.0f} K</div>', unsafe_allow_html=True)
-                            st.markdown(f'<div class="feature-card"><strong>Star Radius:</strong><br>{st_rad:.2f} R☉</div>', unsafe_allow_html=True)
-                        
-                        # Additional mission details
-                        st.markdown("### 📊 Mission Details")
-                        detail_col1, detail_col2 = st.columns(2)
-                        with detail_col1:
-                            st.markdown(f'<div class="physics-card"><strong>Planet-to-Star Ratio:</strong><br>{df_features["rp_rs_ratio"].iloc[0]:.6f}</div>', unsafe_allow_html=True)
-                            st.markdown(f'<div class="physics-card"><strong>System Distance:</strong><br>{sy_dist:.0f} pc</div>', unsafe_allow_html=True)
-                        with detail_col2:
-                            st.markdown(f'<div class="physics-card"><strong>Detection SNR:</strong><br>{(df_features["snr_proxy"].iloc[0] * 100):.1f}</div>', unsafe_allow_html=True)
-                            st.markdown(f'<div class="physics-card"><strong>Transit Probability:</strong><br>{df_features["transit_probability"].iloc[0]:.4f}</div>', unsafe_allow_html=True)
+                        # Compact mission parameters - moved to collapsible section
+                        with st.expander("📊 Mission Parameters & Details", expanded=False):
+                            st.markdown("### 🌟 Key Parameters")
+                            param_col1, param_col2, param_col3 = st.columns(3)
+                            with param_col1:
+                                st.metric("Transit Duration", f"{df_features['transit_duration'].iloc[0]:.2f} hours")
+                                st.metric("Transit Depth", f"{df_features['transit_depth'].iloc[0]:.6f}")
+                            with param_col2:
+                                st.metric("Orbital Period", f"{pl_orbper:.2f} days")
+                                st.metric("Planet Radius", f"{pl_rade:.2f} R⊕")
+                            with param_col3:
+                                st.metric("Star Temperature", f"{st_teff:.0f} K")
+                                st.metric("Star Radius", f"{st_rad:.2f} R☉")
+                            
+                            st.markdown("### 🔬 Advanced Physics")
+                            physics_col1, physics_col2 = st.columns(2)
+                            with physics_col1:
+                                st.metric("Planet-to-Star Ratio", f"{df_features['rp_rs_ratio'].iloc[0]:.6f}")
+                                st.metric("System Distance", f"{sy_dist:.0f} pc")
+                            with physics_col2:
+                                st.metric("Detection SNR", f"{(df_features['snr_proxy'].iloc[0] * 100):.1f}")
+                                st.metric("Transit Probability", f"{df_features['transit_probability'].iloc[0]:.4f}")
                         
                     except Exception as e:
                         st.error(f"Error loading enhanced animation: {e}")
@@ -934,50 +934,44 @@ def main():
                 """)
     
     with col2:
-        st.markdown("### 🚀 Mission Control Status")
+        # Compact mission control status
+        st.markdown("### 🚀 Mission Control")
         
-        st.markdown('<div class="mission-card"><h3>🎯 AI Detection System</h3><p>96.74% accuracy trained on 50,000+ exoplanets</p></div>', unsafe_allow_html=True)
-        st.markdown('<div class="mission-card"><h3>⚡ Mission Speed</h3><p>Real-time analysis and visualization</p></div>', unsafe_allow_html=True)
-        st.markdown('<div class="mission-card"><h3>🔬 Survey Compatibility</h3><p>Kepler, K2, TESS mission data</p></div>', unsafe_allow_html=True)
+        # Key metrics only
+        st.metric("AI Detection", "96.74%", "±0.5%")
+        st.metric("Processing Speed", "Real-time", "⚡")
+        st.metric("Data Sources", "Kepler, K2, TESS", "🔬")
         
-        st.markdown('<div class="spacer"></div>', unsafe_allow_html=True)
+        # Collapsible sections for detailed info
+        with st.expander("🛠️ Mission Capabilities", expanded=False):
+            st.markdown("""
+            - ✅ **Advanced AI**: Neural network trained on NASA data
+            - ✅ **3D Visualization**: Immersive transit simulation
+            - ✅ **Real-time Analysis**: Instant results and feedback
+            - ✅ **Multiple Viewing Modes**: Earth, Space, Top, Side views
+            - ✅ **Binary Star Systems**: Support for complex stellar systems
+            - ✅ **Educational Content**: Learn while you explore
+            """)
         
-        st.markdown("### 📊 Mission Performance")
-        st.metric("Detection Accuracy", "96.74%", "±0.5%")
-        st.metric("False Positive Rate", "3.0%", "-1.2%")
-        st.metric("Mission Success Rate", "98.0%", "±0.3%")
-        st.metric("Data Processing Speed", "Real-time", "⚡")
+        with st.expander("📊 Performance Details", expanded=False):
+            st.metric("Detection Accuracy", "96.74%", "±0.5%")
+            st.metric("False Positive Rate", "3.0%", "-1.2%")
+            st.metric("Mission Success Rate", "98.0%", "±0.3%")
         
-        st.markdown('<div class="spacer"></div>', unsafe_allow_html=True)
-        
-        # Mission capabilities
-        st.markdown("### 🛠️ Mission Capabilities")
-        st.markdown("""
-        - ✅ **Advanced AI**: Neural network trained on NASA data
-        - ✅ **3D Visualization**: Immersive transit simulation
-        - ✅ **Real-time Analysis**: Instant results and feedback
-        - ✅ **Multiple Viewing Modes**: Earth, Space, Top, Side views
-        - ✅ **Binary Star Systems**: Support for complex stellar systems
-        - ✅ **Educational Content**: Learn while you explore
-        """)
-        
-        # Preset Information Display
+        # Preset Information Display - Compact
         if st.session_state.selected_preset_name and st.session_state.selected_preset_name != "Custom":
             preset_info = preset_data[st.session_state.selected_preset_name]
-            st.markdown("### 📖 Mission Target Information")
-            st.markdown(f'<div class="info-card"><strong>Mission Status:</strong> {preset_info["status"]}</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="info-card"><strong>Target Description:</strong> {preset_info["description"]}</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="info-card"><strong>Discovery Mission:</strong> {preset_info["discovery"]}</div>', unsafe_allow_html=True)
-            
-            # Mission briefing for preset
-            st.markdown("### 🎯 Mission Briefing")
-            st.info(f"""
-            **Target:** {st.session_state.selected_preset_name}
-            
-            This is a real exoplanet discovered by space missions. Use this as a reference 
-            to understand how our AI detects and analyzes exoplanets. Try modifying the 
-            parameters to see how different values affect the detection!
-            """)
+            with st.expander("📖 Target Information", expanded=False):
+                st.markdown(f'**Status:** {preset_info["status"]}')
+                st.markdown(f'**Description:** {preset_info["description"]}')
+                st.markdown(f'**Discovery:** {preset_info["discovery"]}')
+                
+                st.info(f"""
+                **Target:** {st.session_state.selected_preset_name}
+                
+                This is a real exoplanet discovered by space missions. Use this as a reference 
+                to understand how our AI detects and analyzes exoplanets!
+                """)
 
 if __name__ == "__main__":
     main()
