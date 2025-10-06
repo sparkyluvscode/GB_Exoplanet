@@ -106,6 +106,70 @@
         renderer.setClearColor(0x000000, 1);
         document.getElementById('animation-container').appendChild(renderer.domElement);
 
+        // Texture loader
+        const textureLoader = new THREE.TextureLoader();
+        
+        // Load textures with fallbacks
+        let sunTexture = null;
+        let terrestrialTexture = null;
+        
+        // Load sun texture
+        textureLoader.load('sun.webp', 
+            (texture) => {
+                console.log('Sun texture loaded successfully');
+                sunTexture = texture;
+                updateStarTexture();
+            },
+            undefined,
+            (error) => {
+                console.log('Error loading sun.webp:', error);
+                createFallbackSunTexture();
+            }
+        );
+        
+        // Load terrestrial texture
+        textureLoader.load('terrestrial.jpg',
+            (texture) => {
+                console.log('Terrestrial texture loaded successfully');
+                terrestrialTexture = texture;
+                updatePlanetTexture();
+            },
+            undefined,
+            (error) => {
+                console.log('Error loading terrestrial.jpg:', error);
+                createFallbackPlanetTexture();
+            }
+        );
+
+        // Create fallback textures
+        function createFallbackSunTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+            gradient.addColorStop(0, '#ffaa00');
+            gradient.addColorStop(1, '#ff6600');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 256, 256);
+            sunTexture = new THREE.CanvasTexture(canvas);
+            updateStarTexture();
+        }
+
+        function createFallbackPlanetTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+            gradient.addColorStop(0, '#0077ff');
+            gradient.addColorStop(1, '#0044aa');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 256, 256);
+            terrestrialTexture = new THREE.CanvasTexture(canvas);
+            updatePlanetTexture();
+        }
+
         // Create star (sun)
         const starGeometry = new THREE.SphereGeometry(2, 32, 32);
         const starMaterial = new THREE.MeshBasicMaterial({ 
@@ -121,6 +185,31 @@
         const planetMaterial = new THREE.MeshBasicMaterial({ color: 0x0077ff });
         const planet = new THREE.Mesh(planetGeometry, planetMaterial);
         scene.add(planet);
+
+        // Add some lighting for better texture visibility
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambientLight);
+        
+        const pointLight = new THREE.PointLight(0xffffff, 0.8, 100);
+        pointLight.position.set(0, 0, 0);
+        scene.add(pointLight);
+
+        // Update textures when loaded
+        function updateStarTexture() {
+            if (sunTexture && star) {
+                star.material.map = sunTexture;
+                star.material.needsUpdate = true;
+                console.log('Star texture updated');
+            }
+        }
+
+        function updatePlanetTexture() {
+            if (terrestrialTexture && planet) {
+                planet.material.map = terrestrialTexture;
+                planet.material.needsUpdate = true;
+                console.log('Planet texture updated');
+            }
+        }
 
         // Create orbit ring
         const orbitGeometry = new THREE.RingGeometry(8, 8.2, 64);
@@ -261,8 +350,15 @@
                 starColor = 0xff5030; // Red
             }
             
-            star.material.color.setHex(starColor);
-            star.material.emissive.setHex(starColor);
+            // Only change color if texture failed to load
+            if (!sunTexture) {
+                star.material.color.setHex(starColor);
+                star.material.emissive.setHex(starColor);
+            } else {
+                // Keep texture but adjust emissive color for temperature
+                star.material.emissive.setHex(starColor);
+                star.material.emissiveIntensity = 0.2;
+            }
             
             // Update planet size
             const planetSize = Math.max(0.1, Math.min(1.0, animationParams.planetRadius * 0.2));
