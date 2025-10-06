@@ -8,9 +8,14 @@ import joblib
 import os
 
 # --- Configuration ---
+<<<<<<< HEAD
+DATA_PATH = '/Users/_an.kith/Desktop/Python/Nasa_Space_Apps/GB_Exoplanet/Nasa_Space_Apps/Exoplanets/processed_exoplanet_data.csv'
+MODEL_DIR = '.'
+=======
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH = os.path.join(SCRIPT_DIR, 'processed_exoplanet_data.csv')
 MODEL_DIR = SCRIPT_DIR
+>>>>>>> 2ba96d7603b99e2ff74fb4cb96f5505e2fed2192
 MODEL_NAME = 'corrected_transit_model.pkl'
 FEATURES_NAME = 'corrected_transit_features.pkl'
 IMPUTER_NAME = 'corrected_transit_imputer.pkl'
@@ -29,10 +34,9 @@ def create_corrected_transit_features(df):
         if col not in df.columns:
             raise ValueError(f"Missing required column: {col}")
 
-    # === CORE TRANSIT OBSERVABLES (PHYSICALLY ACCURATE) ===
     
     # 1. Rp/Rs - Planet to Star radius ratio (THE fundamental transit observable)
-    # Convert Earth radii to Solar radii: 1 R_earth = 0.009167 R_sun
+
     df['rp_rs_ratio'] = df['pl_rade'] * 0.009167 / df['st_rad']
     df['rp_rs_ratio_log'] = np.log1p(df['rp_rs_ratio'])
 
@@ -41,39 +45,33 @@ def create_corrected_transit_features(df):
     df['transit_depth_log'] = np.log1p(df['transit_depth'])
 
     # 3. Transit Duration (physically correct)
-    # For circular orbits: T_dur = (R* * P) / (π * a)
-    # Using Kepler's 3rd law: a ∝ P^(2/3) (assuming stellar mass ~ 1 solar mass)
-    # T_dur ∝ (R* * P^(1/3)) / π
+
     df['transit_duration'] = (df['st_rad'] * (df['pl_orbper'] ** (1/3))) / np.pi
     df['transit_duration_log'] = np.log1p(df['transit_duration'])
 
     # 4. Transit Probability (geometric probability)
-    # P_transit = R* / a, where a ∝ P^(2/3)
-    # P_transit ∝ R* / P^(2/3)
+
     df['transit_probability'] = df['st_rad'] / (df['pl_orbper'] ** (2/3))
     df['transit_probability_log'] = np.log1p(df['transit_probability'])
 
     # 5. Signal-to-Noise Ratio proxy
-    # SNR ∝ (transit_depth) * sqrt(stellar_flux) / sqrt(noise)
-    # Approximating stellar flux ∝ R*² * T_eff⁴ and noise ∝ sqrt(period)
+
     stellar_flux_proxy = (df['st_rad'] ** 2) * ((df['st_teff'] / 5778) ** 4)
     noise_proxy = np.sqrt(df['pl_orbper'])
     df['snr_proxy'] = df['transit_depth'] * np.sqrt(stellar_flux_proxy) / noise_proxy
     df['snr_proxy_log'] = np.log1p(df['snr_proxy'])
 
     # 6. Stellar Luminosity (Stefan-Boltzmann law)
-    # L ∝ R*² * T_eff⁴
+ 
     df['stellar_luminosity'] = (df['st_rad'] ** 2) * ((df['st_teff'] / 5778) ** 4)
     df['stellar_luminosity_log'] = np.log1p(df['stellar_luminosity'])
 
     # 7. Transit Observability (distance-dependent detectability)
-    # How observable is this transit given the distance?
-    # Brightness decreases as 1/distance², so observability ∝ transit_depth / distance
+
     df['transit_observability'] = df['transit_depth'] / df['sy_dist']
     df['transit_observability_log'] = np.log1p(df['transit_observability'])
 
     # 8. Transit Frequency (how often transits occur)
-    # Frequency = 1 / orbital period
     df['transit_frequency'] = 1.0 / df['pl_orbper']
     df['transit_frequency_log'] = np.log1p(df['transit_frequency'])
 
@@ -95,14 +93,11 @@ def create_corrected_transit_features(df):
     df['temperature_sanity_check'] = np.where((df['st_teff'] < 2000) | (df['st_teff'] > 10000), 0, 1)
     df['transit_depth_sanity'] = np.where((df['transit_depth'] < 1e-6) | (df['transit_depth'] > 0.1), 0, 1)
 
-    # 12. Distance-based SNR degradation
-    # SNR decreases with distance due to photon noise
+
     df['distance_snr_degradation'] = df['snr_proxy'] / np.sqrt(df['sy_dist'])
     df['distance_snr_degradation_log'] = np.log1p(df['distance_snr_degradation'])
 
-    # 13. Transit Impact Parameter Proxy
-    # Related to transit geometry (how the planet crosses the star)
-    # Impact parameter affects transit shape and duration
+
     df['impact_parameter_proxy'] = np.sqrt(df['pl_orbper']) / (df['st_rad'] * 10)
     df['impact_parameter_proxy_log'] = np.log1p(df['impact_parameter_proxy'])
 

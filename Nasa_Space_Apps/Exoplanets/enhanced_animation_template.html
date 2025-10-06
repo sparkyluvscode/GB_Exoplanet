@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ExoScope AI - Immersive Exoplanet Transit Simulation</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+        }
+        
+        #animation-container {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+            background: radial-gradient(ellipse at center, #1a1a2e 0%, #0c0c0c 100%);
+        }
+        
+        #mission-header {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(0,0,0,0.9), rgba(20,20,40,0.95));
+            padding: 20px 40px;
+            border-radius: 20px;
+            border: 2px solid rgba(100, 200, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+        }
+        
+        #mission-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #64c8ff, #ff6b9d, #c44569);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0;
+            text-shadow: 0 0 30px rgba(100, 200, 255, 0.5);
+        }
+        
+        #mission-subtitle {
+            font-size: 1rem;
+            color: #a0a0a0;
+            margin: 5px 0 0 0;
+            font-weight: 300;
+        }
+        
+        #controls-panel {
+            position: absolute;
+            top: 120px;
+            left: 20px;
+            z-index: 100;
+            background: linear-gradient(135deg, rgba(0,0,0,0.85), rgba(20,20,40,0.9));
+            padding: 20px;
+            border-radius: 15px;
+            color: white;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            border: 1px solid rgba(100, 200, 255, 0.2);
+            backdrop-filter: blur(10px);
+            min-width: 280px;
+        }
+        
+        #info-panel {
+            position: absolute;
+            top: 120px;
+            right: 20px;
+            z-index: 100;
+            background: linear-gradient(135deg, rgba(0,0,0,0.85), rgba(20,20,40,0.9));
+            padding: 20px;
+            border-radius: 15px;
+            color: white;
+            font-size: 13px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            border: 1px solid rgba(100, 200, 255, 0.2);
+            backdrop-filter: blur(10px);
+            min-width: 250px;
+        }
+        
+        #viewing-modes {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .control-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 12px 20px;
+            margin: 4px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            min-width: 100px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .control-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .info-section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(100, 200, 255, 0.3);
+            border-left-color: #64c8ff;
+            transition: all 0.3s ease;
+        }
+        
+        .mission-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(100, 200, 255, 0.2);
+            border-color: rgba(100, 200, 255, 0.6);
+            transition: all 0.3s ease;
+        }
+        
+        .control-button:active {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+        }
+        
+        .control-button:disabled {
+            background: linear-gradient(135deg, #666 0%, #555 100%);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .control-button.playing {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            animation: pulse 2s infinite;
+        }
+        
+        .control-button.reset {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        }
+        
+        .control-button.binary {
+            background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+        }
+        
+        .control-button.earth-view {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        }
+        
+        .control-button.space-view {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4); }
+            50% { box-shadow: 0 4px 25px rgba(255, 107, 107, 0.8); }
+            100% { box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4); }
+        }
+        
+        .info-section {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            border-left: 3px solid #64c8ff;
+        }
+        
+        .info-section h4 {
+            margin: 0 0 8px 0;
+            color: #64c8ff;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .info-value {
+            font-weight: 700;
+            color: #ffffff;
+        }
+        
+        .transit-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 200;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: 700;
+            box-shadow: 0 8px 32px rgba(255, 107, 107, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            opacity: 0;
+            transition: all 0.5s ease;
+            text-align: center;
+        }
+        
+        .transit-indicator.show {
+            opacity: 1;
+            animation: transitPulse 1s infinite;
+        }
+        
+        @keyframes transitPulse {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.05); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+        
+        #loading-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            transition: opacity 0.5s ease;
+        }
+        
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(100, 200, 255, 0.3);
+            border-top: 4px solid #64c8ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            font-size: 18px;
+            color: #64c8ff;
+            font-weight: 600;
+        }
+        
+        #instructions {
+            position: absolute;
+            bottom: 80px;
+            left: 20px;
+            z-index: 100;
+            background: rgba(0,0,0,0.7);
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 12px;
+            color: #a0a0a0;
+            max-width: 300px;
+            border: 1px solid rgba(100, 200, 255, 0.2);
+        }
+        
+        .star-type-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        
+        .star-type-o { background: #3fddff; box-shadow: 0 0 10px #3fddff; }
+        .star-type-b { background: #3feaff; box-shadow: 0 0 10px #3feaff; }
+        .star-type-a { background: #ffffff; box-shadow: 0 0 10px #ffffff; }
+        .star-type-f { background: #dfa010; box-shadow: 0 0 10px #dfa010; }
+        .star-type-g { background: #ffa010; box-shadow: 0 0 10px #ffa010; }
+        .star-type-k { background: #ff5030; box-shadow: 0 0 10px #ff5030; }
+        .star-type-m { background: #ff1010; box-shadow: 0 0 10px #ff1010; }
+    </style>
+</head>
+<body>
+    <div id="loading-screen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Initializing ExoScope AI...</div>
+    </div>
+
+    <div id="animation-container">
+        <div id="mission-header">
+            <h1 id="mission-title">ExoScope AI</h1>
+            <p id="mission-subtitle">Advanced Exoplanet Transit Detection & Visualization System</p>
+        </div>
+        
+        <div id="controls-panel">
+            <h3 style="margin-top: 0; color: #64c8ff;">Mission Control</h3>
+            <button id="playButton" class="control-button" onclick="togglePlayPause()">▶️ Start Mission</button>
+            <button id="resetButton" class="control-button reset" onclick="resetAnimation()">🔄 Reset View</button>
+            <button id="binaryButton" class="control-button binary" onclick="toggleBinaryStar()">⭐ Binary System</button>
+            <button id="earthViewButton" class="control-button earth-view" onclick="setEarthView()">🌍 Earth View</button>
+            <button id="spaceViewButton" class="control-button space-view" onclick="setSpaceView()">🚀 Space View</button>
+        </div>
+        
+        <div id="info-panel">
+            <div class="info-section">
+                <h4>🪐 Planetary Data</h4>
+                <div><strong>Orbital Period:</strong> <span id="period-display" class="info-value">365.25</span> days</div>
+                <div><strong>Planet Radius:</strong> <span id="planet-radius-display" class="info-value">1.0</span> R⊕</div>
+                <div><strong>Transit Duration:</strong> <span id="transit-duration-display" class="info-value">0.0</span> hours</div>
+            </div>
+            
+            <div class="info-section">
+                <h4>⭐ Stellar Data</h4>
+                <div><strong>Star Type:</strong> <span id="star-type-display" class="info-value">G2V</span> <span id="star-type-indicator" class="star-type-indicator star-type-g"></span></div>
+                <div><strong>Temperature:</strong> <span id="star-temp-display" class="info-value">5778</span> K</div>
+                <div><strong>Radius:</strong> <span id="star-radius-display" class="info-value">1.0</span> R☉</div>
+            </div>
+            
+            <div class="info-section">
+                <h4>🔬 Transit Physics</h4>
+                <div><strong>Transit Depth:</strong> <span id="transit-depth-display" class="info-value">0.000084</span></div>
+                <div><strong>Rp/Rs Ratio:</strong> <span id="rp-rs-display" class="info-value">0.009167</span></div>
+                <div><strong>Detection SNR:</strong> <span id="snr-display" class="info-value">15.2</span></div>
+            </div>
+        </div>
+        
+        <div id="viewing-modes">
+            <button class="control-button" onclick="setTopView()">🔭 Top View</button>
+            <button class="control-button" onclick="setSideView()">👁️ Side View</button>
+            <button class="control-button" onclick="setFollowView()">🎯 Follow Planet</button>
+        </div>
+        
+        <div id="transit-indicator" class="transit-indicator">
+            🌟 TRANSIT IN PROGRESS 🌟<br>
+            <small>Planet crossing in front of star</small>
+        </div>
+        
+        <div id="instructions">
+            <strong>Mission Controls:</strong><br>
+            • Mouse: Drag to rotate camera<br>
+            • Scroll: Zoom in/out<br>
+            • Keys: R=Reset, B=Binary, Space=Play/Pause<br>
+            • Watch for the transit indicator when planet crosses star
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/104/three.min.js"></script>
+    <script>
+        // Mission parameters - will be set by Streamlit
+        let missionParams = {
+            orbitalPeriod: 365.25,
+            planetRadius: 1.0,
+            starRadius: 1.0,
+            starTemperature: 5778,
+            transitDuration: 0.0,
+            isPlaying: false,
+            isBinary: false,
+            viewingMode: 'space'
+        };
+
+        // Three.js setup
+        const scene = new THREE.Scene();
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        
+        const camera = new THREE.PerspectiveCamera(60, width / height, 1, 1000000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(width, height);
+        renderer.setClearColor(0x000000, 1);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        
+        document.getElementById('animation-container').appendChild(renderer.domElement);
+
+        // Texture loader with fallback textures
+        const textureLoader = new THREE.TextureLoader();
+        
+        // Create procedural textures as fallbacks
+        function createProceduralTexture(color, size = 256) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            // Create gradient
+            const gradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+            gradient.addColorStop(0, color);
+            gradient.addColorStop(1, '#000000');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+            
+            // Add some noise
+            const imageData = ctx.getImageData(0, 0, size, size);
+            const data = imageData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                const noise = (Math.random() - 0.5) * 30;
+                data[i] = Math.max(0, Math.min(255, data[i] + noise));
+                data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + noise));
+                data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + noise));
+            }
+            ctx.putImageData(imageData, 0, 0);
+            
+            return new THREE.CanvasTexture(canvas);
+        }
+        
+        // Load textures with fallbacks
+        const sunTexture = createProceduralTexture('#FFD700');
+        const terrestrialTexture = createProceduralTexture('#4A90E2');
+        const blueStarTexture = createProceduralTexture('#3fddff');
+        const blueWhiteTexture = createProceduralTexture('#3feaff');
+
+        // Star color system based on temperature
+        const starColors = {
+            O: { color: 0x3fddff, intensity: 10, secondary: 0x3feaff, secondaryIntensity: 4, type: 'O' },
+            B: { color: 0x3feaff, intensity: 20, secondary: 0x3feaff, secondaryIntensity: 8, type: 'B' },
+            A: { color: 0x3fddff, intensity: 55, secondary: 0x3feaff, secondaryIntensity: 10, type: 'A' },
+            F: { color: 0xdfa010, intensity: 55, secondary: 0xdea010, secondaryIntensity: 30, type: 'F' },
+            G: { color: 0xffa010, intensity: 35, secondary: 0xffff10, secondaryIntensity: 1, type: 'G' },
+            K: { color: 0xff5030, intensity: 30, secondary: 0xffffff, secondaryIntensity: 1, type: 'K' },
+            M: { color: 0xff1010, intensity: 30, secondary: 0xff1010, secondaryIntensity: 1, type: 'M' }
+        };
+
+        function getStarType(temp) {
+            if (temp >= 30000) return starColors.O;
+            if (temp >= 10000) return starColors.B;
+            if (temp >= 7500) return starColors.A;
+            if (temp >= 6000) return starColors.F;
+            if (temp >= 5200) return starColors.G;
+            if (temp >= 3700) return starColors.K;
+            return starColors.M;
+        }
+
+        // Calculate derived parameters
+        function calculateDerivedParams() {
+            const planetRadiusSolar = missionParams.planetRadius * 0.009167;
+            const planetStarRatio = planetRadiusSolar / missionParams.starRadius;
+            
+            const baseOrbitalRadius = 30;
+            const orbitalRadius = Math.max(baseOrbitalRadius, baseOrbitalRadius * Math.pow(missionParams.orbitalPeriod / 365.25, 2/3));
+            
+            const planetSize = Math.max(0.5, Math.min(4.0, planetStarRatio * 30));
+            const starSize = Math.max(5, Math.min(25, missionParams.starRadius * 10));
+            
+            const baseSpeed = 0.0008;
+            const orbitSpeed = baseSpeed * Math.sqrt(365.25 / missionParams.orbitalPeriod);
+            
+            const transitDepth = planetStarRatio * planetStarRatio;
+            const rpRsRatio = planetStarRatio;
+            
+            return {
+                planetSize,
+                starSize,
+                orbitalRadius,
+                orbitSpeed,
+                planetStarRatio,
+                transitDepth,
+                rpRsRatio
+            };
+        }
+
+        // Create objects
+        let planet, star, corona, orbitRing, binaryStar1, binaryStar2, corona1, corona2, binaryOrbit;
+        let derivedParams = calculateDerivedParams();
+
+        function createObjects() {
+            // Remove existing objects
+            [planet, star, corona, orbitRing, binaryStar1, binaryStar2, corona1, corona2, binaryOrbit].forEach(obj => {
+                if (obj) scene.remove(obj);
+            });
+
+            // Create planet
+            const planetGeometry = new THREE.SphereGeometry(derivedParams.planetSize, 64, 64);
+            const planetMaterial = new THREE.MeshStandardMaterial({ 
+                map: terrestrialTexture,
+                roughness: 0.8,
+                metalness: 0.1
+            });
+            planet = new THREE.Mesh(planetGeometry, planetMaterial);
+            planet.castShadow = true;
+            planet.receiveShadow = true;
+            planet.name = "planet";
+            scene.add(planet);
+
+            if (!missionParams.isBinary) {
+                // Single star system
+                const starGeometry = new THREE.SphereGeometry(derivedParams.starSize, 64, 64);
+                const starMaterial = new THREE.MeshStandardMaterial({ 
+                    map: sunTexture,
+                    emissive: new THREE.Color(0x222200),
+                    emissiveIntensity: 0.3
+                });
+                star = new THREE.Mesh(starGeometry, starMaterial);
+                star.name = "star";
+                scene.add(star);
+
+                // Create corona
+                const coronaGeometry = new THREE.SphereGeometry(derivedParams.starSize * 1.15, 64, 64);
+                const coronaMaterial = new THREE.MeshStandardMaterial({ 
+                    map: sunTexture, 
+                    transparent: true, 
+                    opacity: 0.2,
+                    emissive: new THREE.Color(0x444400),
+                    emissiveIntensity: 0.1
+                });
+                corona = new THREE.Mesh(coronaGeometry, coronaMaterial);
+                corona.name = "corona";
+                scene.add(corona);
+
+                // Create orbit ring
+                const orbitGeometry = new THREE.RingGeometry(
+                    derivedParams.orbitalRadius - 0.3, 
+                    derivedParams.orbitalRadius + 0.3, 
+                    128
+                );
+                const orbitMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0x444444, 
+                    transparent: true, 
+                    opacity: 0.6 
+                });
+                orbitRing = new THREE.Mesh(orbitGeometry, orbitMaterial);
+                orbitRing.rotation.x = -Math.PI / 2;
+                orbitRing.name = "orbit";
+                scene.add(orbitRing);
+            } else {
+                // Binary star system
+                const star1Geometry = new THREE.SphereGeometry(derivedParams.starSize * 0.6, 64, 64);
+                const star1Material = new THREE.MeshStandardMaterial({ 
+                    map: sunTexture,
+                    emissive: new THREE.Color(0x222200),
+                    emissiveIntensity: 0.3
+                });
+                binaryStar1 = new THREE.Mesh(star1Geometry, star1Material);
+                binaryStar1.name = "binaryStar1";
+                scene.add(binaryStar1);
+
+                const star2Geometry = new THREE.SphereGeometry(derivedParams.starSize, 64, 64);
+                const star2Material = new THREE.MeshStandardMaterial({ 
+                    map: sunTexture,
+                    emissive: new THREE.Color(0x222200),
+                    emissiveIntensity: 0.3
+                });
+                binaryStar2 = new THREE.Mesh(star2Geometry, star2Material);
+                binaryStar2.name = "binaryStar2";
+                scene.add(binaryStar2);
+
+                // Binary coronas
+                const corona1Geometry = new THREE.SphereGeometry(derivedParams.starSize * 0.6 * 1.15, 64, 64);
+                const corona1Material = new THREE.MeshStandardMaterial({ 
+                    map: sunTexture, 
+                    transparent: true, 
+                    opacity: 0.2,
+                    emissive: new THREE.Color(0x444400),
+                    emissiveIntensity: 0.1
+                });
+                corona1 = new THREE.Mesh(corona1Geometry, corona1Material);
+                corona1.name = "corona1";
+                scene.add(corona1);
+
+                const corona2Geometry = new THREE.SphereGeometry(derivedParams.starSize * 1.15, 64, 64);
+                const corona2Material = new THREE.MeshStandardMaterial({ 
+                    map: sunTexture, 
+                    transparent: true, 
+                    opacity: 0.2,
+                    emissive: new THREE.Color(0x444400),
+                    emissiveIntensity: 0.1
+                });
+                corona2 = new THREE.Mesh(corona2Geometry, corona2Material);
+                corona2.name = "corona2";
+                scene.add(corona2);
+
+                // Binary orbit
+                const binaryOrbitGeometry = new THREE.RingGeometry(120 - 1, 120 + 1, 128);
+                const binaryOrbitMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0x666666, 
+                    transparent: true, 
+                    opacity: 0.4 
+                });
+                binaryOrbit = new THREE.Mesh(binaryOrbitGeometry, binaryOrbitMaterial);
+                binaryOrbit.rotation.x = -Math.PI / 2;
+                binaryOrbit.name = "binaryOrbit";
+                scene.add(binaryOrbit);
+            }
+        }
+
+        // Lighting setup
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+        const sunLight = new THREE.PointLight(0xffffff, 1, 2000);
+        sunLight.castShadow = true;
+        sunLight.shadow.mapSize.width = 2048;
+        sunLight.shadow.mapSize.height = 2048;
+
+        scene.add(ambientLight);
+        scene.add(sunLight);
+
+        // Dynamic spotlights
+        let sunSpotlight1, sunSpotlight2;
+
+        function setupLighting() {
+            // Remove existing spotlights
+            if (sunSpotlight1) scene.remove(sunSpotlight1);
+            if (sunSpotlight2) scene.remove(sunSpotlight2);
+
+            const starType = getStarType(missionParams.starTemperature);
+            
+            sunSpotlight1 = new THREE.SpotLight(starType.color, starType.intensity, 0, Math.PI/3, 0.1, 0);
+            sunSpotlight2 = new THREE.SpotLight(starType.secondary, starType.secondaryIntensity, 0, Math.PI/3, 0.1, 0);
+            
+            sunSpotlight1.castShadow = true;
+            sunSpotlight2.castShadow = true;
+            
+            scene.add(sunSpotlight1);
+            scene.add(sunSpotlight2);
+        }
+
+        // Camera setup
+        function setupCamera() {
+            if (missionParams.viewingMode === 'earth') {
+                camera.position.set(0, derivedParams.orbitalRadius * 0.3, derivedParams.orbitalRadius * 1.2);
+            } else if (missionParams.viewingMode === 'space') {
+                camera.position.set(0, derivedParams.orbitalRadius * 0.5, derivedParams.orbitalRadius * 0.8);
+            } else {
+                camera.position.set(0, derivedParams.orbitalRadius * 1.2, 0);
+            }
+            camera.lookAt(0, 0, 0);
+        }
+
+        // Animation variables
+        let startTime = Date.now();
+        let pauseTime = 0;
+        let isPlaying = false;
+        let animationId = null;
+        let isInTransit = false;
+
+        // Animation loop
+        function animate() {
+            const currentTime = Date.now();
+            const elapsed = (currentTime - startTime - pauseTime) * derivedParams.orbitSpeed;
+
+            if (planet) {
+                // Planet orbit
+                planet.position.x = Math.sin(elapsed) * derivedParams.orbitalRadius;
+                planet.position.z = Math.cos(elapsed) * derivedParams.orbitalRadius;
+                planet.rotation.y += 0.01;
+
+                // Transit detection
+                const planetX = planet.position.x;
+                const starRadius = derivedParams.starSize;
+                const planetRadius = derivedParams.planetSize;
+                
+                const wasInTransit = isInTransit;
+                isInTransit = Math.abs(planetX) < (starRadius + planetRadius) && 
+                             planet.position.z > -starRadius && 
+                             planet.position.z < starRadius;
+                
+                if (isInTransit && !wasInTransit) {
+                    // Transit started
+                    document.getElementById('transit-indicator').classList.add('show');
+                    planet.material.emissive.setHex(0x004400);
+                    planet.material.emissiveIntensity = 0.3;
+                } else if (!isInTransit && wasInTransit) {
+                    // Transit ended
+                    document.getElementById('transit-indicator').classList.remove('show');
+                    planet.material.emissive.setHex(0x000000);
+                    planet.material.emissiveIntensity = 0;
+                }
+            }
+
+            if (missionParams.isBinary) {
+                // Binary star animation
+                if (binaryStar1) {
+                    binaryStar1.rotation.y -= 0.02;
+                    binaryStar1.position.x = Math.sin(Math.PI - (currentTime * 0.0005)) * 120;
+                    binaryStar1.position.z = Math.cos(Math.PI - (currentTime * 0.0005)) * 120;
+                }
+                if (binaryStar2) {
+                    binaryStar2.rotation.y -= 0.02;
+                    binaryStar2.position.x = Math.sin(-(currentTime * 0.0005)) * 120;
+                    binaryStar2.position.z = Math.cos(-(currentTime * 0.0005)) * 120;
+                }
+                if (corona1) {
+                    corona1.rotation.y -= 0.01;
+                    corona1.position.x = binaryStar1.position.x;
+                    corona1.position.z = binaryStar1.position.z;
+                }
+                if (corona2) {
+                    corona2.rotation.y -= 0.01;
+                    corona2.position.x = binaryStar2.position.x;
+                    corona2.position.z = binaryStar2.position.z;
+                }
+            } else {
+                // Single star animation
+                if (star) {
+                    star.rotation.y -= 0.005;
+                }
+                if (corona) {
+                    corona.rotation.y -= 0.002;
+                }
+            }
+
+            // Update spotlight positions
+            if (sunSpotlight1) {
+                sunSpotlight1.position.copy(camera.position);
+            }
+            if (sunSpotlight2) {
+                sunSpotlight2.position.copy(camera.position);
+            }
+
+            renderer.render(scene, camera);
+            if (isPlaying) {
+                animationId = requestAnimationFrame(animate);
+            }
+        }
+
+        // Control functions
+        function togglePlayPause() {
+            const playButton = document.getElementById('playButton');
+            
+            if (isPlaying) {
+                isPlaying = false;
+                pauseTime += Date.now() - (startTime + pauseTime);
+                playButton.textContent = '▶️ Start Mission';
+                playButton.classList.remove('playing');
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                    animationId = null;
+                }
+            } else {
+                isPlaying = true;
+                playButton.textContent = '⏸️ Pause Mission';
+                playButton.classList.add('playing');
+                animate();
+            }
+        }
+
+        function resetAnimation() {
+            isPlaying = false;
+            pauseTime = 0;
+            startTime = Date.now();
+            
+            const playButton = document.getElementById('playButton');
+            playButton.textContent = '▶️ Start Mission';
+            playButton.classList.remove('playing');
+            
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            
+            if (planet) {
+                planet.position.set(derivedParams.orbitalRadius, 0, 0);
+            }
+            
+            document.getElementById('transit-indicator').classList.remove('show');
+            renderer.render(scene, camera);
+        }
+
+        function toggleBinaryStar() {
+            missionParams.isBinary = !missionParams.isBinary;
+            derivedParams = calculateDerivedParams();
+            createObjects();
+            setupLighting();
+            setupCamera();
+            updateDisplay();
+            
+            const binaryButton = document.getElementById('binaryButton');
+            binaryButton.textContent = missionParams.isBinary ? '⭐ Single Star' : '⭐ Binary System';
+            
+            renderer.render(scene, camera);
+        }
+
+        function setEarthView() {
+            missionParams.viewingMode = 'earth';
+            setupCamera();
+        }
+
+        function setSpaceView() {
+            missionParams.viewingMode = 'space';
+            setupCamera();
+        }
+
+        function setTopView() {
+            missionParams.viewingMode = 'top';
+            camera.position.set(0, derivedParams.orbitalRadius * 1.5, 0);
+            camera.lookAt(0, 0, 0);
+        }
+
+        function setSideView() {
+            missionParams.viewingMode = 'side';
+            camera.position.set(derivedParams.orbitalRadius * 1.5, 0, 0);
+            camera.lookAt(0, 0, 0);
+        }
+
+        function setFollowView() {
+            missionParams.viewingMode = 'follow';
+            // This will be handled in the animation loop
+        }
+
+        // Update parameters function (called by Streamlit)
+        function updateParameters(params) {
+            missionParams = { ...missionParams, ...params };
+            derivedParams = calculateDerivedParams();
+            createObjects();
+            setupLighting();
+            setupCamera();
+            updateDisplay();
+            
+            isPlaying = false;
+            pauseTime = 0;
+            startTime = Date.now();
+            
+            const playButton = document.getElementById('playButton');
+            if (playButton) {
+                playButton.textContent = '▶️ Start Mission';
+                playButton.classList.remove('playing');
+            }
+            
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            
+            document.getElementById('transit-indicator').classList.remove('show');
+            renderer.render(scene, camera);
+        }
+
+        function updateDisplay() {
+            const starType = getStarType(missionParams.starTemperature);
+            
+            document.getElementById('period-display').textContent = missionParams.orbitalPeriod.toFixed(2);
+            document.getElementById('planet-radius-display').textContent = missionParams.planetRadius.toFixed(2);
+            document.getElementById('star-radius-display').textContent = missionParams.starRadius.toFixed(2);
+            document.getElementById('star-temp-display').textContent = missionParams.starTemperature.toFixed(0);
+            document.getElementById('transit-duration-display').textContent = missionParams.transitDuration.toFixed(2);
+            document.getElementById('transit-depth-display').textContent = derivedParams.transitDepth.toFixed(8);
+            document.getElementById('rp-rs-display').textContent = derivedParams.rpRsRatio.toFixed(6);
+            document.getElementById('snr-display').textContent = (derivedParams.transitDepth * 100).toFixed(1);
+            
+            // Update star type display
+            document.getElementById('star-type-display').textContent = starType.type + '2V';
+            const indicator = document.getElementById('star-type-indicator');
+            indicator.className = 'star-type-indicator star-type-' + starType.type.toLowerCase();
+        }
+
+        // Mouse controls
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+
+        renderer.domElement.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            previousMousePosition.x = e.clientX;
+            previousMousePosition.y = e.clientY;
+        });
+
+        renderer.domElement.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            const deltaX = e.clientX - previousMousePosition.x;
+            const deltaY = e.clientY - previousMousePosition.y;
+
+            if (missionParams.viewingMode === 'follow' && planet) {
+                // Follow the planet
+                const planetPos = planet.position.clone();
+                planetPos.y += 10;
+                camera.position.copy(planetPos);
+                camera.lookAt(planet.position);
+            } else {
+                // Free camera movement
+                camera.position.x -= deltaX * 0.01;
+                camera.position.y += deltaY * 0.01;
+                camera.lookAt(0, 0, 0);
+            }
+
+            previousMousePosition.x = e.clientX;
+            previousMousePosition.y = e.clientY;
+        });
+
+        renderer.domElement.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // Zoom controls
+        renderer.domElement.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomSpeed = 0.1;
+            const direction = e.deltaY > 0 ? 1 : -1;
+            camera.position.multiplyScalar(1 + direction * zoomSpeed);
+        });
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            switch(e.key.toLowerCase()) {
+                case 'r':
+                    resetAnimation();
+                    break;
+                case 'b':
+                    toggleBinaryStar();
+                    break;
+                case ' ':
+                    e.preventDefault();
+                    togglePlayPause();
+                    break;
+            }
+        });
+
+        // Initialize
+        function initialize() {
+            createObjects();
+            setupLighting();
+            setupCamera();
+            updateDisplay();
+            
+            // Hide loading screen
+            setTimeout(() => {
+                document.getElementById('loading-screen').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('loading-screen').style.display = 'none';
+                }, 500);
+            }, 2000);
+            
+            animate();
+        }
+
+        // Make functions available globally for Streamlit
+        window.updateAnimationParameters = updateParameters;
+        window.togglePlayPause = togglePlayPause;
+        window.resetAnimation = resetAnimation;
+        window.toggleBinaryStar = toggleBinaryStar;
+        window.setEarthView = setEarthView;
+        window.setSpaceView = setSpaceView;
+        window.setTopView = setTopView;
+        window.setSideView = setSideView;
+        window.setFollowView = setFollowView;
+
+        // Start the mission
+        initialize();
+    </script>
+</body>
+</html>

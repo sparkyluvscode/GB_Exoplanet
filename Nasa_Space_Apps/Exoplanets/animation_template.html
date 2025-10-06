@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exoplanet Transit Animation</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: Arial, sans-serif;
+        }
+        #animation-container {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+        }
+        #controls {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            z-index: 100;
+            background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(20,20,20,0.9));
+            padding: 15px;
+            border-radius: 12px;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        #info-panel {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 100;
+            background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(20,20,20,0.9));
+            padding: 15px;
+            border-radius: 12px;
+            color: white;
+            font-size: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            min-width: 200px;
+        }
+        .control-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 10px 16px;
+            margin: 4px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            min-width: 80px;
+        }
+        .control-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+        }
+        .control-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        .control-button:disabled {
+            background: linear-gradient(135deg, #666 0%, #555 100%);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .control-button.playing {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        }
+        .control-button.playing:hover {
+            background: linear-gradient(135deg, #ff5252 0%, #e74c3c 100%);
+        }
+        .control-button.reset {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        }
+        .control-button.reset:hover {
+            background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+        }
+    </style>
+</head>
+<body>
+    <div id="animation-container">
+        <div id="controls">
+            <button id="playButton" class="control-button" onclick="togglePlayPause()">▶️ Play</button>
+            <button id="resetButton" class="control-button reset" onclick="resetAnimation()">🔄 Reset</button>
+        </div>
+        <div id="info-panel">
+            <div><strong>Orbital Period:</strong> <span id="period-display">365.25</span> days</div>
+            <div><strong>Planet Radius:</strong> <span id="planet-radius-display">1.0</span> R⊕</div>
+            <div><strong>Star Radius:</strong> <span id="star-radius-display">1.0</span> R☉</div>
+            <div><strong>Star Temperature:</strong> <span id="star-temp-display">5778</span> K</div>
+            <div><strong>Transit Duration:</strong> <span id="transit-duration-display">0.0</span> hours</div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/104/three.min.js"></script>
+    <script>
+        // Animation parameters - will be set by Streamlit
+        let animationParams = {
+            orbitalPeriod: 365.25,
+            planetRadius: 1.0,
+            starRadius: 1.0,
+            starTemperature: 5778,
+            transitDuration: 0.0,
+            isPlaying: false
+        };
+
+        // Three.js setup
+        const scene = new THREE.Scene();
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        
+        const camera = new THREE.PerspectiveCamera(60, width / height, 1, 1000000);
+        const renderer = new THREE.WebGLRenderer({ 
+            antialias: true,
+            alpha: true,
+            powerPreference: "high-performance"
+        });
+        renderer.setSize(width, height);
+        renderer.setClearColor(0x000000, 1);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        
+        document.getElementById('animation-container').appendChild(renderer.domElement);
+
+        // Texture loader
+        const textureLoader = new THREE.TextureLoader();
+        
+        // Load actual texture files with error handling
+        const sunTexture = textureLoader.load('sun.webp', undefined, undefined, (error) => {
+            console.log('Error loading sun.webp:', error);
+        });
+        const blueWhiteTexture = textureLoader.load('blue_white.jpg', undefined, undefined, (error) => {
+            console.log('Error loading blue_white.jpg:', error);
+        });
+        const blueStarTexture = textureLoader.load('blue_star.png', undefined, undefined, (error) => {
+            console.log('Error loading blue_star.png:', error);
+        });
+        const terrestrialTexture = textureLoader.load('terrestrial.jpg', undefined, undefined, (error) => {
+            console.log('Error loading terrestrial.jpg:', error);
+        });
+        
+        // Create fallback textures
+        const createFallbackTexture = (color) => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+            gradient.addColorStop(0, color);
+            gradient.addColorStop(1, '#000000');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 256, 256);
+            return new THREE.CanvasTexture(canvas);
+        };
+
+        // Create texture arrays for different star types with fallbacks
+        const starTextures = {
+            blue: blueStarTexture || createFallbackTexture('#3fddff'),
+            blue_white: blueWhiteTexture || createFallbackTexture('#3feaff'),
+            white: blueWhiteTexture || createFallbackTexture('#ffffff'),
+            yellow_white: sunTexture || createFallbackTexture('#dfa010'),
+            yellow: sunTexture || createFallbackTexture('#ffa010'),
+            orange: sunTexture || createFallbackTexture('#ff5030'),
+            red: sunTexture || createFallbackTexture('#ff1010')
+        };
+
+        const planetTexture = terrestrialTexture || createFallbackTexture('#0077ff');
+
+        // Calculate derived parameters
+        function calculateDerivedParams() {
+            // Convert Earth radii to Solar radii: 1 R_earth = 0.009167 R_sun
+            const planetRadiusSolar = animationParams.planetRadius * 0.009167;
+            const planetStarRatio = planetRadiusSolar / animationParams.starRadius;
+            
+            // Calculate orbital radius (scaled for visualization)
+            // Use Kepler's third law: P² ∝ a³, so a ∝ P^(2/3)
+            const baseOrbitalRadius = 25;
+            const orbitalRadius = Math.max(baseOrbitalRadius, baseOrbitalRadius * Math.pow(animationParams.orbitalPeriod / 365.25, 2/3));
+            
+            // Calculate planet size (scaled for visualization, but keep it visible)
+            const planetSize = Math.max(0.3, Math.min(3.0, planetStarRatio * 25));
+            
+            // Calculate star size (scaled for visualization)
+            const starSize = Math.max(3, Math.min(20, animationParams.starRadius * 8));
+            
+            // Calculate orbit speed (inversely proportional to orbital period)
+            // Make it more dramatic for visualization
+            const baseSpeed = 0.001;
+            const orbitSpeed = baseSpeed * Math.sqrt(365.25 / animationParams.orbitalPeriod);
+            
+            return {
+                planetSize,
+                starSize,
+                orbitalRadius,
+                orbitSpeed,
+                planetStarRatio
+            };
+        }
+
+        // Create objects
+        let planet, star, corona, orbitRing;
+        let derivedParams = calculateDerivedParams();
+
+        function createObjects() {
+            // Remove existing objects
+            if (planet) scene.remove(planet);
+            if (star) scene.remove(star);
+            if (corona) scene.remove(corona);
+            if (orbitRing) scene.remove(orbitRing);
+            
+            // Remove additional objects
+            const outerGlow = scene.getObjectByName("outerGlow");
+            if (outerGlow) scene.remove(outerGlow);
+            const starAtmosphere = scene.getObjectByName("starAtmosphere");
+            if (starAtmosphere) scene.remove(starAtmosphere);
+            const starfield = scene.getObjectByName("starfield");
+            if (starfield) scene.remove(starfield);
+
+            // Create planet with enhanced materials
+            const planetGeometry = new THREE.SphereGeometry(derivedParams.planetSize, 64, 64);
+            const planetMaterial = new THREE.MeshStandardMaterial({ 
+                map: planetTexture,
+                normalMap: planetTexture, // Use texture as normal map for surface detail
+                roughness: 0.8,
+                metalness: 0.1,
+                emissive: new THREE.Color(0x001122), // Subtle glow
+                emissiveIntensity: 0.1
+            });
+            planet = new THREE.Mesh(planetGeometry, planetMaterial);
+            planet.name = "planet";
+            planet.castShadow = true;
+            planet.receiveShadow = true;
+            scene.add(planet);
+
+            // Create star with enhanced materials and glow effect
+            const starGeometry = new THREE.SphereGeometry(derivedParams.starSize, 64, 64);
+            const starMaterial = new THREE.MeshStandardMaterial({ 
+                map: sunTexture,
+                emissive: new THREE.Color(0xffffff),
+                emissiveIntensity: 0.3,
+                roughness: 0.1,
+                metalness: 0.0
+            });
+            star = new THREE.Mesh(starGeometry, starMaterial);
+            star.name = "star";
+            star.castShadow = true;
+            star.receiveShadow = true;
+            scene.add(star);
+
+            // Create corona with animated glow effect
+            const coronaGeometry = new THREE.SphereGeometry(derivedParams.starSize * 1.15, 32, 32);
+            const coronaMaterial = new THREE.MeshStandardMaterial({ 
+                map: sunTexture, 
+                transparent: true, 
+                opacity: 0.2,
+                emissive: new THREE.Color(0xffffff),
+                emissiveIntensity: 0.1,
+                side: THREE.BackSide // Render inside of sphere for glow effect
+            });
+            corona = new THREE.Mesh(coronaGeometry, coronaMaterial);
+            corona.name = "corona";
+            scene.add(corona);
+
+            // Create outer glow layer
+            const outerGlowGeometry = new THREE.SphereGeometry(derivedParams.starSize * 1.3, 16, 16);
+            const outerGlowMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xffffff,
+                transparent: true, 
+                opacity: 0.05,
+                side: THREE.BackSide
+            });
+            const outerGlow = new THREE.Mesh(outerGlowGeometry, outerGlowMaterial);
+            outerGlow.name = "outerGlow";
+            scene.add(outerGlow);
+
+            // Create orbit ring with enhanced appearance
+            const orbitGeometry = new THREE.RingGeometry(
+                derivedParams.orbitalRadius - 0.3, 
+                derivedParams.orbitalRadius + 0.3, 
+                128
+            );
+            const orbitMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x666666, 
+                transparent: true, 
+                opacity: 0.3,
+                side: THREE.DoubleSide
+            });
+            orbitRing = new THREE.Mesh(orbitGeometry, orbitMaterial);
+            orbitRing.rotation.x = -Math.PI / 2;
+            orbitRing.name = "orbit";
+            scene.add(orbitRing);
+
+            // Add particle system for star atmosphere
+            createStarAtmosphere();
+            
+            // Add background starfield
+            createStarfield();
+        }
+
+        function createStarfield() {
+            const starCount = 1000;
+            const starGeometry = new THREE.BufferGeometry();
+            const starPositions = new Float32Array(starCount * 3);
+            const starColors = new Float32Array(starCount * 3);
+
+            for (let i = 0; i < starCount; i++) {
+                const i3 = i * 3;
+                
+                // Random positions in a large sphere
+                const radius = 500 + Math.random() * 1000;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.random() * Math.PI;
+
+                starPositions[i3] = radius * Math.sin(phi) * Math.cos(theta);
+                starPositions[i3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                starPositions[i3 + 2] = radius * Math.cos(phi);
+
+                // Random star colors (mostly white/blue with some variation)
+                const colorVariation = Math.random();
+                if (colorVariation < 0.1) {
+                    starColors[i3] = 0.8; starColors[i3 + 1] = 0.8; starColors[i3 + 2] = 1.0; // Blue
+                } else if (colorVariation < 0.2) {
+                    starColors[i3] = 1.0; starColors[i3 + 1] = 0.9; starColors[i3 + 2] = 0.8; // Yellow
+                } else if (colorVariation < 0.3) {
+                    starColors[i3] = 1.0; starColors[i3 + 1] = 0.7; starColors[i3 + 2] = 0.7; // Red
+                } else {
+                    starColors[i3] = 1.0; starColors[i3 + 1] = 1.0; starColors[i3 + 2] = 1.0; // White
+                }
+            }
+
+            starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+            starGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+
+            const starMaterial = new THREE.PointsMaterial({
+                size: 0.5,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.8,
+                blending: THREE.AdditiveBlending
+            });
+
+            const starfield = new THREE.Points(starGeometry, starMaterial);
+            starfield.name = "starfield";
+            scene.add(starfield);
+        }
+
+        function createStarAtmosphere() {
+            const particleCount = 200;
+            const particles = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+
+            for (let i = 0; i < particleCount; i++) {
+                const i3 = i * 3;
+                const radius = derivedParams.starSize * (1.2 + Math.random() * 0.8);
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.random() * Math.PI;
+
+                positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
+                positions[i3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                positions[i3 + 2] = radius * Math.cos(phi);
+
+                // Color based on star temperature
+                const temp = animationParams.starTemperature;
+                let r, g, b;
+                if (temp >= 10000) {
+                    r = 0.2; g = 0.6; b = 1.0; // Blue
+                } else if (temp >= 6000) {
+                    r = 1.0; g = 1.0; b = 0.8; // White
+                } else if (temp >= 4000) {
+                    r = 1.0; g = 0.8; b = 0.4; // Yellow
+                } else {
+                    r = 1.0; g = 0.4; b = 0.2; // Red
+                }
+
+                colors[i3] = r;
+                colors[i3 + 1] = g;
+                colors[i3 + 2] = b;
+            }
+
+            particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const particleMaterial = new THREE.PointsMaterial({
+                size: 0.1,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.6,
+                blending: THREE.AdditiveBlending
+            });
+
+            const particleSystem = new THREE.Points(particles, particleMaterial);
+            particleSystem.name = "starAtmosphere";
+            scene.add(particleSystem);
+        }
+
+        // Lighting setup
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+        const sunLight = new THREE.PointLight(0xffffff, 1, 1000);
+        sunLight.castShadow = true;
+        sunLight.shadow.mapSize.width = 2048;
+        sunLight.shadow.mapSize.height = 2048;
+        sunLight.shadow.camera.near = 0.5;
+        sunLight.shadow.camera.far = 1000;
+        
+        const sunSpotlight1 = new THREE.SpotLight(0xffaa00, 2, 0, Math.PI/4, 0.1, 0);
+        sunSpotlight1.castShadow = true;
+        sunSpotlight1.shadow.mapSize.width = 1024;
+        sunSpotlight1.shadow.mapSize.height = 1024;
+        
+        const sunSpotlight2 = new THREE.SpotLight(0xff6600, 1, 0, Math.PI/4, 0.1, 0);
+        sunSpotlight2.castShadow = true;
+
+        scene.add(ambientLight);
+        scene.add(sunLight);
+        scene.add(sunSpotlight1);
+        scene.add(sunSpotlight2);
+
+        // Camera setup
+        camera.position.set(0, derivedParams.orbitalRadius * 0.5, derivedParams.orbitalRadius * 0.8);
+        camera.lookAt(0, 0, 0);
+
+        // Animation variables
+        let startTime = Date.now();
+        let pauseTime = 0;
+        let isPlaying = false;
+        let animationId = null;
+
+        // Star color and texture based on temperature
+        function updateStarColor() {
+            const temp = animationParams.starTemperature;
+            let color1, color2, intensity1, intensity2, starType, starTexture;
+
+            if (temp >= 30000) {
+                color1 = 0x3fddff; intensity1 = 10;
+                color2 = 0x3feaff; intensity2 = 4;
+                starType = 'blue';
+            } else if (temp >= 10000) {
+                color1 = 0x3fddff; intensity1 = 20;
+                color2 = 0x3feaff; intensity2 = 8;
+                starType = 'blue_white';
+            } else if (temp >= 7500) {
+                color1 = 0x3fddff; intensity1 = 55;
+                color2 = 0x3feaff; intensity2 = 10;
+                starType = 'white';
+            } else if (temp >= 6000) {
+                color1 = 0xdfa010; intensity1 = 55;
+                color2 = 0xdea010; intensity2 = 30;
+                starType = 'yellow_white';
+            } else if (temp >= 5200) {
+                color1 = 0xffa010; intensity1 = 35;
+                color2 = 0xffff10; intensity2 = 1;
+                starType = 'yellow';
+            } else if (temp >= 3700) {
+                color1 = 0xff5030; intensity1 = 30;
+                color2 = 0xffffff; intensity2 = 1;
+                starType = 'orange';
+            } else {
+                color1 = 0xff1010; intensity1 = 30;
+                color2 = 0xff1010; intensity2 = 1;
+                starType = 'red';
+            }
+
+            // Update star texture
+            starTexture = starTextures[starType];
+            if (star && starTexture) {
+                star.material.map = starTexture;
+                star.material.needsUpdate = true;
+            }
+
+            // Update corona texture
+            if (corona && starTexture) {
+                corona.material.map = starTexture;
+                corona.material.needsUpdate = true;
+            }
+
+            // Update lighting
+            sunSpotlight1.color.setHex(color1);
+            sunSpotlight1.intensity = intensity1;
+            sunSpotlight2.color.setHex(color2);
+            sunSpotlight2.intensity = intensity2;
+        }
+
+        // Animation loop
+        function animate() {
+            const currentTime = Date.now();
+            const elapsed = (currentTime - startTime - pauseTime) * derivedParams.orbitSpeed;
+
+            if (planet) {
+                // Planet orbit
+                planet.position.x = Math.sin(elapsed) * derivedParams.orbitalRadius;
+                planet.position.z = Math.cos(elapsed) * derivedParams.orbitalRadius;
+                planet.rotation.y += 0.01;
+
+                // Check for transit
+                const planetX = planet.position.x;
+                const starRadius = derivedParams.starSize;
+                const planetRadius = derivedParams.planetSize;
+                
+                // Simple transit detection (planet crossing in front of star)
+                const isInTransit = Math.abs(planetX) < (starRadius + planetRadius) && 
+                                  planet.position.z > -starRadius && 
+                                  planet.position.z < starRadius;
+                
+                if (isInTransit) {
+                    planet.material.emissive.setHex(0x004400);
+                } else {
+                    planet.material.emissive.setHex(0x000000);
+                }
+            }
+
+            if (star) {
+                star.rotation.y -= 0.005;
+            }
+
+            if (corona) {
+                corona.rotation.y -= 0.002;
+                // Animate corona opacity for pulsing effect
+                const pulse = Math.sin(elapsed * 0.001) * 0.1 + 0.2;
+                corona.material.opacity = pulse;
+            }
+
+            // Animate outer glow
+            const outerGlow = scene.getObjectByName("outerGlow");
+            if (outerGlow) {
+                outerGlow.rotation.y += 0.001;
+                const glowPulse = Math.sin(elapsed * 0.0005) * 0.02 + 0.05;
+                outerGlow.material.opacity = glowPulse;
+            }
+
+            // Animate star atmosphere particles
+            const starAtmosphere = scene.getObjectByName("starAtmosphere");
+            if (starAtmosphere) {
+                starAtmosphere.rotation.y += 0.0005;
+                starAtmosphere.rotation.x += 0.0002;
+            }
+
+            // Update spotlight positions
+            sunSpotlight1.position.copy(camera.position);
+            sunSpotlight2.position.copy(camera.position);
+
+            renderer.render(scene, camera);
+            if (isPlaying) {
+                animationId = requestAnimationFrame(animate);
+            }
+        }
+
+        // Global animation function
+        let globalAnimate = null;
+
+        // Control functions
+        function togglePlayPause() {
+            const playButton = document.getElementById('playButton');
+            
+            if (isPlaying) {
+                // Pause animation
+                isPlaying = false;
+                pauseTime += Date.now() - (startTime + pauseTime);
+                playButton.textContent = '▶️ Play';
+                playButton.classList.remove('playing');
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                    animationId = null;
+                }
+            } else {
+                // Play animation
+                isPlaying = true;
+                playButton.textContent = '⏸️ Pause';
+                playButton.classList.add('playing');
+                if (globalAnimate) {
+                    globalAnimate();
+                }
+            }
+        }
+
+        function resetAnimation() {
+            isPlaying = false;
+            pauseTime = 0;
+            startTime = Date.now();
+            
+            const playButton = document.getElementById('playButton');
+            playButton.textContent = '▶️ Play';
+            playButton.classList.remove('playing');
+            
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            
+            if (planet) {
+                planet.position.set(derivedParams.orbitalRadius, 0, 0);
+            }
+            renderer.render(scene, camera);
+        }
+
+        // Update parameters function (called by Streamlit)
+        function updateParameters(params) {
+            animationParams = { ...animationParams, ...params };
+            derivedParams = calculateDerivedParams();
+            createObjects();
+            updateStarColor();
+            updateDisplay();
+            
+            // Reset animation state
+            isPlaying = false;
+            pauseTime = 0;
+            startTime = Date.now();
+            
+            const playButton = document.getElementById('playButton');
+            if (playButton) {
+                playButton.textContent = '▶️ Play';
+                playButton.classList.remove('playing');
+            }
+            
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            
+            // Reset camera position
+            camera.position.set(0, derivedParams.orbitalRadius * 0.5, derivedParams.orbitalRadius * 0.8);
+            camera.lookAt(0, 0, 0);
+            
+            // Render initial frame
+            renderer.render(scene, camera);
+        }
+
+        function updateDisplay() {
+            document.getElementById('period-display').textContent = animationParams.orbitalPeriod.toFixed(2);
+            document.getElementById('planet-radius-display').textContent = animationParams.planetRadius.toFixed(2);
+            document.getElementById('star-radius-display').textContent = animationParams.starRadius.toFixed(2);
+            document.getElementById('star-temp-display').textContent = animationParams.starTemperature.toFixed(0);
+            document.getElementById('transit-duration-display').textContent = animationParams.transitDuration.toFixed(2);
+        }
+
+        // Mouse controls
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+
+        renderer.domElement.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            previousMousePosition.x = e.clientX;
+            previousMousePosition.y = e.clientY;
+        });
+
+        renderer.domElement.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            const deltaX = e.clientX - previousMousePosition.x;
+            const deltaY = e.clientY - previousMousePosition.y;
+
+            camera.position.x -= deltaX * 0.01;
+            camera.position.y += deltaY * 0.01;
+            camera.lookAt(0, 0, 0);
+
+            previousMousePosition.x = e.clientX;
+            previousMousePosition.y = e.clientY;
+        });
+
+        renderer.domElement.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // Zoom controls
+        renderer.domElement.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomSpeed = 0.1;
+            const direction = e.deltaY > 0 ? 1 : -1;
+            camera.position.multiplyScalar(1 + direction * zoomSpeed);
+        });
+
+        // Initialize with error handling
+        try {
+            console.log('Initializing Three.js animation...');
+            console.log('Animation parameters:', animationParams);
+            console.log('Derived parameters:', derivedParams);
+            
+            // Create a simple test scene first
+            const testGeometry = new THREE.BoxGeometry(1, 1, 1);
+            const testMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+            const testCube = new THREE.Mesh(testGeometry, testMaterial);
+            scene.add(testCube);
+            
+            // Position camera
+            camera.position.z = 5;
+            
+            // Simple animation loop
+            function simpleAnimate() {
+                requestAnimationFrame(simpleAnimate);
+                testCube.rotation.x += 0.01;
+                testCube.rotation.y += 0.01;
+                renderer.render(scene, camera);
+            }
+            
+            simpleAnimate();
+            console.log('Simple animation started!');
+            
+            // Try to create the full scene after a delay
+            setTimeout(() => {
+                try {
+                    createObjects();
+                    updateStarColor();
+                    updateDisplay();
+                    globalAnimate = animate;
+                    console.log('Full animation loaded!');
+                } catch (error) {
+                    console.error('Error loading full animation:', error);
+                }
+            }, 1000);
+            
+        } catch (error) {
+            console.error('Error initializing animation:', error);
+            // Show error message in the UI
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: red; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 10px; z-index: 1000;';
+            errorDiv.innerHTML = '<h3>Animation Error</h3><p>Failed to load Three.js animation. Check console for details.</p>';
+            document.getElementById('animation-container').appendChild(errorDiv);
+        }
+
+        // Make functions available globally for Streamlit
+        window.updateAnimationParameters = updateParameters;
+        window.togglePlayPause = togglePlayPause;
+        window.resetAnimation = resetAnimation;
+    </script>
+</body>
+</html>
