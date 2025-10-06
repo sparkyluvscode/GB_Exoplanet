@@ -258,7 +258,33 @@ st.markdown("""
         background: linear-gradient(90deg, #64c8ff, #ff6b9d);
     }
     
-    /* Disable scrolling on main page */
+    /* Disable scrolling on Streamlit sidebar */
+    .css-1d391kg {
+        overflow: hidden !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+    }
+    
+    .css-1d391kg .css-1v0mbdj {
+        overflow: hidden !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+    }
+    
+    /* Target Streamlit sidebar specifically */
+    [data-testid="stSidebar"] {
+        overflow: hidden !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+    }
+    
+    [data-testid="stSidebar"] > div {
+        overflow: hidden !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+    }
+    
+    /* Disable main page scrolling */
     .main {
         overflow: hidden !important;
         height: 100vh !important;
@@ -273,18 +299,22 @@ st.markdown("""
     }
     
     /* Force no scrolling on the entire page */
-    body {
+    body, html {
         overflow: hidden !important;
         height: 100vh !important;
+        max-height: 100vh !important;
     }
     
-    /* Hide scrollbars */
+    /* Hide ALL scrollbars */
     ::-webkit-scrollbar {
         display: none !important;
+        width: 0 !important;
+        height: 0 !important;
     }
     
     * {
         scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
     }
     
     /* Remove ALL link icons and decorations */
@@ -673,17 +703,23 @@ def main():
         st.error("Failed to load model. Please check that the model files exist.")
         return
     
-    # Mission Control Panel - Always visible but compact
-    with st.sidebar:
-        st.markdown("""
-        <div style="text-align: center; margin-bottom: 1rem;">
-            <h2 style="color: #64c8ff; font-family: 'Orbitron', monospace; margin: 0;">MISSION CONTROL</h2>
-            <p style="color: #a0a0a0; font-size: 0.9rem; margin: 0;">Configure your exoplanet detection mission</p>
-        </div>
-        """, unsafe_allow_html=True)
+    # Initialize sidebar state
+    if 'sidebar_closed' not in st.session_state:
+        st.session_state.sidebar_closed = False
+    
+    # Mission Control Panel - Conditionally visible
+    if not st.session_state.sidebar_closed:
+        with st.sidebar:
+            st.markdown("""
+            <div style="text-align: center; margin-bottom: 1rem;">
+                <h2 style="color: #64c8ff; font-family: 'Orbitron', monospace; margin: 0;">MISSION CONTROL</h2>
+                <p style="color: #a0a0a0; font-size: 0.9rem; margin: 0;">Configure your exoplanet detection mission</p>
+            </div>
+            """, unsafe_allow_html=True)
+    
     # Preset selection
     preset_data = get_preset_data()
-    selected_preset = st.sidebar.selectbox("Choose a preset:", ["Custom"] + list(preset_data.keys()))
+            selected_preset = st.selectbox("Choose a preset:", ["Custom"] + list(preset_data.keys()))
     
     # Initialize session state for preset loading
     if 'preset_loaded' not in st.session_state:
@@ -692,7 +728,7 @@ def main():
         st.session_state.selected_preset_name = None
     
     # Load preset button
-    if st.sidebar.button("Load Preset", disabled=(selected_preset == "Custom")):
+            if st.button("Load Preset", disabled=(selected_preset == "Custom")):
         st.session_state.preset_loaded = True
         st.session_state.selected_preset_name = selected_preset
     
@@ -719,20 +755,20 @@ def main():
         st.session_state.preset_loaded = False
         st.rerun()  # Force rerun to update the form
     
-    # Mission Configuration Form
-    with st.sidebar.form("mission_config_form"):
-        st.markdown("### Planetary Configuration")
-        pl_orbper = st.number_input('Orbital Period (days)', min_value=0.1, max_value=1000.0, value=st.session_state.form_values['pl_orbper'], step=1.0, format="%.2f", help="How long it takes the planet to orbit its star")
-        pl_rade = st.number_input('Planet Radius (Earth radii)', min_value=0.1, max_value=50.0, value=st.session_state.form_values['pl_rade'], step=0.1, format="%.2f", help="Size of the planet compared to Earth")
-        
-        st.markdown("### Stellar Configuration")
-        st_teff = st.number_input('Star Temperature (K)', min_value=2000, max_value=10000, value=st.session_state.form_values['st_teff'], step=50, help="Surface temperature of the host star")
-        st_rad = st.number_input('Star Radius (Solar radii)', min_value=0.1, max_value=10.0, value=st.session_state.form_values['st_rad'], step=0.1, format="%.2f", help="Size of the star compared to our Sun")
-        
-        st.markdown("### System Configuration")
-        sy_dist = st.number_input('System Distance (pc)', min_value=1, max_value=10000, value=st.session_state.form_values['sy_dist'], step=10, help="Distance to the planetary system in parsecs")
-        
-        submitted = st.form_submit_button("Launch Mission", use_container_width=True)
+            # Mission Configuration Form
+            with st.form("mission_config_form"):
+                st.markdown("### Planetary Configuration")
+                pl_orbper = st.number_input('Orbital Period (days)', min_value=0.1, max_value=1000.0, value=st.session_state.form_values['pl_orbper'], step=1.0, format="%.2f", help="How long it takes the planet to orbit its star")
+                pl_rade = st.number_input('Planet Radius (Earth radii)', min_value=0.1, max_value=50.0, value=st.session_state.form_values['pl_rade'], step=0.1, format="%.2f", help="Size of the planet compared to Earth")
+                
+                st.markdown("### Stellar Configuration")
+                st_teff = st.number_input('Star Temperature (K)', min_value=2000, max_value=10000, value=st.session_state.form_values['st_teff'], step=50, help="Surface temperature of the host star")
+                st_rad = st.number_input('Star Radius (Solar radii)', min_value=0.1, max_value=10.0, value=st.session_state.form_values['st_rad'], step=0.1, format="%.2f", help="Size of the star compared to our Sun")
+                
+                st.markdown("### System Configuration")
+                sy_dist = st.number_input('System Distance (pc)', min_value=1, max_value=10000, value=st.session_state.form_values['sy_dist'], step=10, help="Distance to the planetary system in parsecs")
+                
+                submitted = st.form_submit_button("Launch Mission", use_container_width=True)
     
     # Update session state with current form values
     st.session_state.form_values = {
@@ -742,47 +778,31 @@ def main():
         'st_rad': st_rad,
         'sy_dist': sy_dist
     }
-    
-    # Floating Mission Control toggle button
-    st.markdown("""
-    <div id="mission-control-toggle" style="
-        position: fixed;
-        top: 20px;
-        left: 20px;
-        z-index: 1000;
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-        border: 2px solid rgba(100, 200, 255, 0.3);
-        border-radius: 50px;
-        padding: 10px 20px;
-        color: #64c8ff;
-        font-family: 'Orbitron', monospace;
-        font-weight: bold;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        display: none;
-    " onclick="toggleMissionControl()">
-        ⚙️ Mission Control
-    </div>
-    
-    <script>
-    function toggleMissionControl() {
-        const sidebar = document.querySelector('[data-testid="stSidebar"]');
-        if (sidebar) {
-            if (sidebar.style.display === 'none') {
-                sidebar.style.display = 'block';
-                sidebar.style.transition = 'transform 0.5s ease-in-out';
-                sidebar.style.transform = 'translateX(0)';
-            } else {
-                sidebar.style.transition = 'transform 0.5s ease-in-out';
-                sidebar.style.transform = 'translateX(-100%)';
-                setTimeout(function() {
-                    sidebar.style.display = 'none';
-                }, 500);
+    else:
+        # Sidebar is closed - use default values
+        if 'form_values' not in st.session_state:
+            st.session_state.form_values = {
+                'pl_orbper': 365.25,
+                'pl_rade': 1.0,
+                'st_teff': 5778,
+                'st_rad': 1.0,
+                'sy_dist': 100
             }
-        }
-    }
-    </script>
-    """, unsafe_allow_html=True)
+        
+        pl_orbper = st.session_state.form_values['pl_orbper']
+        pl_rade = st.session_state.form_values['pl_rade']
+        st_teff = st.session_state.form_values['st_teff']
+        st_rad = st.session_state.form_values['st_rad']
+        sy_dist = st.session_state.form_values['sy_dist']
+        submitted = False
+    
+    # Show Mission Control toggle button when sidebar is closed
+    if st.session_state.sidebar_closed:
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col2:
+            if st.button("⚙️ Reopen Mission Control", use_container_width=True):
+                st.session_state.sidebar_closed = False
+                st.rerun()
     
     # Main content area - Give more space to animation
     col1, col2 = st.columns([4, 1])
@@ -839,46 +859,9 @@ def main():
             progress_bar.progress(100)
             time.sleep(0.5)
             
-            # Auto-close Mission Control with animation
-            st.markdown("""
-            <script>
-            // Force close Mission Control after prediction
-            function closeMissionControl() {
-                const sidebar = document.querySelector('[data-testid="stSidebar"]');
-                const toggleButton = document.getElementById('mission-control-toggle');
-                
-                if (sidebar) {
-                    // Add closing animation
-                    sidebar.style.transition = 'transform 0.8s ease-in-out, opacity 0.8s ease-in-out';
-                    sidebar.style.transform = 'translateX(-100%)';
-                    sidebar.style.opacity = '0';
-                    
-                    // After animation, hide it completely and show toggle button
-                    setTimeout(function() {
-                        sidebar.style.display = 'none';
-                        sidebar.style.visibility = 'hidden';
-                        if (toggleButton) {
-                            toggleButton.style.display = 'block';
-                            toggleButton.style.animation = 'fadeIn 0.5s ease-in-out';
-                        }
-                    }, 800);
-                }
-            }
-            
-            // Close immediately when this script runs
-            setTimeout(closeMissionControl, 500);
-            
-            // Also try to close after a longer delay as backup
-            setTimeout(closeMissionControl, 2000);
-            </script>
-            
-            <style>
-            @keyframes fadeIn {
-                from { opacity: 0; transform: translateY(-10px); }
-                to { opacity: 1; transform: translateY(0); }
-            }
-            </style>
-            """, unsafe_allow_html=True)
+            # Set session state to close sidebar
+            st.session_state.sidebar_closed = True
+            st.rerun()
             
             # Clear progress indicators
             progress_bar.empty()
@@ -1114,20 +1097,20 @@ def main():
                             st.markdown("### Key Parameters")
                             param_col1, param_col2, param_col3 = st.columns(3)
                             with param_col1:
-                                st.metric("Transit Duration", f"{df_features['transit_duration'].iloc[0]:.2f} hours")
-                                st.metric("Transit Depth", f"{df_features['transit_depth'].iloc[0]:.6f}")
+                            st.metric("Transit Duration", f"{df_features['transit_duration'].iloc[0]:.2f} hours")
+                            st.metric("Transit Depth", f"{df_features['transit_depth'].iloc[0]:.6f}")
                             with param_col2:
-                                st.metric("Orbital Period", f"{pl_orbper:.2f} days")
-                                st.metric("Planet Radius", f"{pl_rade:.2f} R⊕")
+                            st.metric("Orbital Period", f"{pl_orbper:.2f} days")
+                            st.metric("Planet Radius", f"{pl_rade:.2f} R⊕")
                             with param_col3:
-                                st.metric("Star Temperature", f"{st_teff:.0f} K")
-                                st.metric("Star Radius", f"{st_rad:.2f} R☉")
+                            st.metric("Star Temperature", f"{st_teff:.0f} K")
+                            st.metric("Star Radius", f"{st_rad:.2f} R☉")
                             
                             st.markdown("### Advanced Physics")
                             physics_col1, physics_col2 = st.columns(2)
                             with physics_col1:
-                                st.metric("Planet-to-Star Ratio", f"{df_features['rp_rs_ratio'].iloc[0]:.6f}")
-                                st.metric("System Distance", f"{sy_dist:.0f} pc")
+                            st.metric("Planet-to-Star Ratio", f"{df_features['rp_rs_ratio'].iloc[0]:.6f}")
+                            st.metric("System Distance", f"{sy_dist:.0f} pc")
                             with physics_col2:
                                 st.metric("Detection SNR", f"{(df_features['snr_proxy'].iloc[0] * 100):.1f}")
                                 st.metric("Transit Probability", f"{df_features['transit_probability'].iloc[0]:.4f}")
