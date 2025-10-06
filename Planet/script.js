@@ -1,7 +1,8 @@
 
 // The three.js scene: the 3D world where you put objects
 const scene = new THREE.Scene();
-var is_binary_star=false
+var is_binary_star = true
+var falsePositive = false;
 const width=window.innerWidth;
 const height= window.innerHeight;
 var camDist = orbit_radius * 0.7;
@@ -137,7 +138,7 @@ function onMouseWheel(event) {
 document.addEventListener('wheel', onMouseWheel)
 
 function starColorChange(){
-  let star_temp= 4000
+  let star_temp= 11000
   if(star_temp>=30000){
     sun_spotlight_1.color.setHex(sun_colors.blue[0])
     sun_spotlight_1.intensity= sun_colors.blue[1]
@@ -189,27 +190,23 @@ function starColorChange(){
   }
 }
 var timeScale = 1;
-var period = 2;
+var period = 5;
 var start=Date.now()
 var orbit_radius=60
 var orbit_speed=0.0005
 var planet_radius=1
 var sun_radius=10
 var planet_rotation_speed=0.05
-var psize = 14
+var psize = 5
 var ssize = 1
 var planet_star_size_ratio  = psize/(109*ssize)
-planet_radius= (planet_star_size_ratio *sun_radius) / 5
-orbit_radius=25
+planet_radius = (planet_star_size_ratio * sun_radius) / 5
+orbit_radius = 30 * planet_radius;
 var transDuration = 5;
 orbit_speed = (5/transDuration) * orbit_speed
-camDist = orbit_radius * 0.7 * z
-orbit_radius = (orbit_speed*3600* 24*period) / (Math.PI*2)
-console.log(camDist)
-//camDist= Math.sqrt(((orbit_radius/25)**2) * (camDist**2 + sun_radius**2) - sun_radius**2)
-console.log(camDist)
-if(orbit_radius < 25){
-  orbit_radius = 25
+//orbit_radius = (orbit_speed * 3600 * 24 * period) / (Math.PI * 2)
+if (orbit_radius < 25) {
+    orbit_radius = 25;
 }
 console.log(orbit_radius)
 var duration;
@@ -291,7 +288,7 @@ function reset(){
     scene.add(sun_spotlight_2)
     sun_spotlight_2.position.set(0,0,25)
     sun_spotlight_2.distance=100
-    camera.position.set(x*orbit_radius*0.7, 0, 0.7*z*orbit_radius)
+    camera.position.set(x*orbit_radius*0.7, 0, z*orbit_radius*0.7)
     scene.add(corona.mesh)
 }
 
@@ -424,15 +421,12 @@ function binary_star(){
   scene.add(corona_1.mesh)
   scene.add(corona_2.mesh)
 }
-document.addEventListener('keydown', (event) => {
-    if (event.key === 'r') {
-        reset()
-    }
-    if (event.key === 'b'){
-      binary_star()
-      binary_render()
-      is_binary_star=true
-    }
-})
-reset()
-render()
+if (falsePositive) {
+    binary_star()
+    binary_render()
+    is_binary_star = true
+}
+else {
+    reset()
+    render()
+}

@@ -1,15 +1,45 @@
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
     <title>Three.js app</title>
     <link href="style.css" rel="stylesheet" type="text/css" />
-  </head>
-  <body>
+    <style>
+        /* Optional: make iframe responsive */
+        .iframe-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 80vh; /* Adjust the height ratio here */
+            height: 0;
+            overflow: hidden;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            margin-top: 20px;
+        }
+
+            .iframe-container iframe {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                border: 0;
+            }
+    </style>
+</head>
+<body>
     <!-- Including the three.js library -->
-    
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/104/three.min.js"></script>
     <script src="script.js"></script>
-  </body>
+
+    <div class="iframe-container">
+        <iframe src="https://exoscopeai.streamlit.app/"
+                title="Exoplanet Classifier"
+                allowfullscreen
+                loading="lazy">
+        </iframe>
+    </div>
+</body>
 </html>
