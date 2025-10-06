@@ -16,13 +16,21 @@
         
         #animation-container {
             width: 100%;
-            height: 100vh;
+            height: 0;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio (9/16 = 0.5625) */
             position: relative;
             background: radial-gradient(ellipse at center, #1a1a2e 0%, #0c0c0c 100%);
-            aspect-ratio: 16/9;
-            max-height: 1080px;
             max-width: 1920px;
+            max-height: 1080px;
             margin: 0 auto;
+        }
+        
+        #animation-container canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100% !important;
+            height: 100% !important;
         }
         
         #mission-header {
@@ -373,23 +381,23 @@
             show_planet: true
         };
 
-        // Three.js setup with 1920x1080 aspect ratio
+        // Three.js setup with proper 16:9 aspect ratio
         const scene = new THREE.Scene();
-        const targetWidth = 1920;
-        const targetHeight = 1080;
-        const aspectRatio = targetWidth / targetHeight;
+        const aspectRatio = 16/9; // 1920/1080 = 16/9
         
-        // Calculate actual dimensions based on container
+        // Get container dimensions
         const container = document.getElementById('animation-container');
         const containerWidth = container.clientWidth;
         const containerHeight = container.clientHeight;
         
-        // Maintain 16:9 aspect ratio
+        // Calculate renderer size maintaining 16:9 aspect ratio
         let width, height;
         if (containerWidth / containerHeight > aspectRatio) {
+            // Container is wider than 16:9, fit to height
             height = containerHeight;
             width = height * aspectRatio;
         } else {
+            // Container is taller than 16:9, fit to width
             width = containerWidth;
             height = width / aspectRatio;
         }
@@ -402,6 +410,28 @@
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         
         document.getElementById('animation-container').appendChild(renderer.domElement);
+        
+        // Handle window resize to maintain 16:9 aspect ratio
+        function handleResize() {
+            const container = document.getElementById('animation-container');
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+            
+            let width, height;
+            if (containerWidth / containerHeight > aspectRatio) {
+                height = containerHeight;
+                width = height * aspectRatio;
+            } else {
+                width = containerWidth;
+                height = width / aspectRatio;
+            }
+            
+            camera.aspect = aspectRatio;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        }
+        
+        window.addEventListener('resize', handleResize);
 
         // Texture loader with fallback textures
         const textureLoader = new THREE.TextureLoader();

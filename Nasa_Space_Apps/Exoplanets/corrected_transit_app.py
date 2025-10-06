@@ -601,46 +601,38 @@ def main():
         st.error("Failed to load model. Please check that the model files exist.")
         return
     
-    # Collapsible Mission Control Panel
+    # Mission Control Panel - Always visible but compact
     with st.sidebar:
-        col_toggle, col_title = st.columns([1, 3])
-        with col_toggle:
-            if st.button("⚙️", help="Toggle Mission Control Panel", key="toggle_mission_control"):
-                st.session_state.mission_control_expanded = not st.session_state.get('mission_control_expanded', True)
-        with col_title:
-            st.markdown("""
-            <div style="text-align: center;">
-                <h2 style="color: #64c8ff; font-family: 'Orbitron', monospace; margin: 0;">MISSION CONTROL</h2>
-                <p style="color: #a0a0a0; font-size: 0.9rem; margin: 0;">Configure your exoplanet detection mission</p>
-            </div>
-            """, unsafe_allow_html=True)
+        st.markdown("""
+        <div style="text-align: center; margin-bottom: 1rem;">
+            <h2 style="color: #64c8ff; font-family: 'Orbitron', monospace; margin: 0;">MISSION CONTROL</h2>
+            <p style="color: #a0a0a0; font-size: 0.9rem; margin: 0;">Configure your exoplanet detection mission</p>
+        </div>
+        """, unsafe_allow_html=True)
+    # Preset selection
+    preset_data = get_preset_data()
+    selected_preset = st.sidebar.selectbox("Choose a preset:", ["Custom"] + list(preset_data.keys()))
     
-    # Mission Control Panel (collapsible)
-    if st.session_state.get('mission_control_expanded', True):
-        # Preset selection
-        preset_data = get_preset_data()
-        selected_preset = st.sidebar.selectbox("Choose a preset:", ["Custom"] + list(preset_data.keys()))
-        
-        # Initialize session state for preset loading
-        if 'preset_loaded' not in st.session_state:
-            st.session_state.preset_loaded = False
-        if 'selected_preset_name' not in st.session_state:
-            st.session_state.selected_preset_name = None
-        
-        # Load preset button
-        if st.sidebar.button("Load Preset", disabled=(selected_preset == "Custom")):
-            st.session_state.preset_loaded = True
-            st.session_state.selected_preset_name = selected_preset
-        
-        # Initialize session state for form values
-        if 'form_values' not in st.session_state:
-            st.session_state.form_values = {
-                'pl_orbper': 365.25,
-                'pl_rade': 1.0,
-                'st_teff': 5778,
-                'st_rad': 1.0,
-                'sy_dist': 100
-            }
+    # Initialize session state for preset loading
+    if 'preset_loaded' not in st.session_state:
+        st.session_state.preset_loaded = False
+    if 'selected_preset_name' not in st.session_state:
+        st.session_state.selected_preset_name = None
+    
+    # Load preset button
+    if st.sidebar.button("Load Preset", disabled=(selected_preset == "Custom")):
+        st.session_state.preset_loaded = True
+        st.session_state.selected_preset_name = selected_preset
+    
+    # Initialize session state for form values
+    if 'form_values' not in st.session_state:
+        st.session_state.form_values = {
+            'pl_orbper': 365.25,
+            'pl_rade': 1.0,
+            'st_teff': 5778,
+            'st_rad': 1.0,
+            'sy_dist': 100
+        }
     
     # Load preset values if button was clicked
     if st.session_state.preset_loaded and st.session_state.selected_preset_name and st.session_state.selected_preset_name != "Custom":
@@ -925,21 +917,32 @@ def main():
                         # Calculate transit duration for animation
                         transit_duration_hours = df_features['transit_duration'].iloc[0]
                         
-                        # Create JavaScript to update animation parameters
+                        # Create JavaScript parameters for EXOPLANET simulation (positive prediction)
                         js_params = f"""
                         <script>
-                        // Update animation parameters when the page loads
-                        window.addEventListener('load', function() {{
-                            if (window.updateAnimationParameters) {{
-                                window.updateAnimationParameters({{
-                                    orbitalPeriod: {pl_orbper},
-                                    planetRadius: {pl_rade},
-                                    starRadius: {st_rad},
-                                    starTemperature: {st_teff},
-                                    transitDuration: {transit_duration_hours}
-                                }});
-                            }}
-                        }});
+                        // Set parameters for exoplanet simulation (positive prediction)
+                        window.animationParams = {{
+                            pl_orbper: {pl_orbper},
+                            pl_rade: {pl_rade},
+                            st_teff: {st_teff},
+                            st_rad: {st_rad},
+                            sy_dist: {sy_dist},
+                            transit_duration: {df_features['transit_duration'].iloc[0]},
+                            transit_depth: {df_features['transit_depth'].iloc[0]},
+                            rp_rs_ratio: {df_features['rp_rs_ratio'].iloc[0]},
+                            snr_proxy: {df_features['snr_proxy'].iloc[0]},
+                            transit_probability: {df_features['transit_probability'].iloc[0]},
+                            stellar_luminosity: {df_features['stellar_luminosity'].iloc[0]},
+                            // Force exoplanet mode for positive predictions
+                            binary_star_mode: false,
+                            show_planet: true,
+                            isBinary: false
+                        }};
+                        
+                        // Update parameters when page loads
+                        if (typeof updateParameters === 'function') {{
+                            updateParameters(window.animationParams);
+                        }}
                         </script>
                         """
                         
