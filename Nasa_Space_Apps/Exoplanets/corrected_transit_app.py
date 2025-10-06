@@ -500,7 +500,7 @@ def main():
     st.markdown('<p class="mission-subtitle">Mission Control Center - Advanced Exoplanet Detection & Visualization System</p>', unsafe_allow_html=True)
     
     # Compact mission briefing
-    with st.expander("🚀 Mission Briefing", expanded=False):
+    with st.expander("Mission Briefing", expanded=False):
         st.markdown("""
         **Welcome to Mission Control, Space Explorer!**
         
@@ -508,32 +508,32 @@ def main():
         with immersive 3D visualization to help you discover and analyze worlds beyond our solar system.
         
         **Your Mission:**
-        1. 🎯 Input planetary and stellar parameters in the Mission Control Panel
-        2. 🔍 Deploy our AI to analyze the transit data
-        3. 🎬 Watch the incredible 3D simulation of your exoplanet
-        4. 📊 Study the light curve and transit physics
-        5. 🌟 Discover if you've found a new world!
+        1. Input planetary and stellar parameters in the Mission Control Panel
+        2. Deploy our AI to analyze the transit data
+        3. Watch the incredible 3D simulation of your exoplanet
+        4. Study the light curve and transit physics
+        5. Discover if you've found a new world!
         
-        **Ready to make history?** Let's find some exoplanets! 🚀
+        **Ready to make history?** Let's find some exoplanets!
         """)
     
     # Educational content
-    with st.expander("📚 Learn About Exoplanets", expanded=False):
+    with st.expander("Learn About Exoplanets", expanded=False):
         col_edu1, col_edu2 = st.columns(2)
         
         with col_edu1:
             st.markdown("""
-            **🌍 What are Exoplanets?**
+            **What are Exoplanets?**
             
             Exoplanets are planets that orbit stars other than our Sun. Since the first discovery in 1995, 
             we've found over 5,000 confirmed exoplanets using various detection methods.
             
-            **🔍 The Transit Method**
+            **The Transit Method**
             
             When a planet passes in front of its star, it blocks a tiny amount of light. This "transit" 
             creates a measurable dip in the star's brightness that we can detect from Earth.
             
-            **📊 What We Can Learn**
+            **What We Can Learn**
             
             - Planet size (from transit depth)
             - Orbital period (from transit timing)
@@ -543,7 +543,7 @@ def main():
         
         with col_edu2:
             st.markdown("""
-            **⭐ Star Types & Colors**
+            **Star Types & Colors**
             
             Stars come in different types based on temperature:
             - **O & B**: Blue-white, very hot (30,000+ K)
@@ -553,7 +553,7 @@ def main():
             - **K**: Orange (3,700-5,200 K)
             - **M**: Red, cool (2,000-3,700 K)
             
-            **🎯 Detection Challenges**
+            **Detection Challenges**
             
             - Planets are tiny compared to stars
             - Transit depth is often < 1%
@@ -561,41 +561,15 @@ def main():
             - Must distinguish from stellar activity
             """)
     
-    # Accessibility features
-    with st.expander("♿ Accessibility & Inclusivity", expanded=False):
-        st.markdown("""
-        **ExoScope AI is designed for everyone!**
-        
-        **🎨 Visual Accessibility:**
-        - High contrast color schemes
-        - Colorblind-friendly palettes
-        - Large, readable fonts
-        - Clear visual indicators
-        
-        **🔊 Audio Features:**
-        - Screen reader compatible
-        - Audio descriptions available
-        - Keyboard navigation support
-        
-        **🌍 Global Accessibility:**
-        - Multi-language support (coming soon)
-        - Cultural sensitivity in design
-        - Universal scientific concepts
-        
-        **📱 Device Compatibility:**
-        - Mobile responsive design
-        - Touch-friendly controls
-        - Adaptive layouts
-        """)
     
     # Compact mission status
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("Mission Status", "Ready", "🚀")
+        st.metric("Mission Status", "Ready", "Active")
     with col2:
         st.metric("AI Accuracy", "96.74%", "±0.5%")
     with col3:
-        st.metric("Systems", "Online", "✅")
+        st.metric("Systems", "Online", "Operational")
     
     # Load model
     model, features, imputer = load_corrected_model()
@@ -607,7 +581,7 @@ def main():
     # Mission Control Panel
     st.sidebar.markdown("""
     <div style="text-align: center; margin-bottom: 2rem;">
-        <h2 style="color: #64c8ff; font-family: 'Orbitron', monospace;">🎯 MISSION CONTROL</h2>
+        <h2 style="color: #64c8ff; font-family: 'Orbitron', monospace;">MISSION CONTROL</h2>
         <p style="color: #a0a0a0; font-size: 0.9rem;">Configure your exoplanet detection mission</p>
     </div>
     """, unsafe_allow_html=True)
@@ -652,18 +626,18 @@ def main():
     
     # Mission Configuration Form
     with st.sidebar.form("mission_config_form"):
-        st.markdown("### 🪐 Planetary Configuration")
+        st.markdown("### Planetary Configuration")
         pl_orbper = st.number_input('Orbital Period (days)', min_value=0.1, max_value=1000.0, value=st.session_state.form_values['pl_orbper'], step=1.0, format="%.2f", help="How long it takes the planet to orbit its star")
         pl_rade = st.number_input('Planet Radius (Earth radii)', min_value=0.1, max_value=50.0, value=st.session_state.form_values['pl_rade'], step=0.1, format="%.2f", help="Size of the planet compared to Earth")
         
-        st.markdown("### ⭐ Stellar Configuration")
+        st.markdown("### Stellar Configuration")
         st_teff = st.number_input('Star Temperature (K)', min_value=2000, max_value=10000, value=st.session_state.form_values['st_teff'], step=50, help="Surface temperature of the host star")
         st_rad = st.number_input('Star Radius (Solar radii)', min_value=0.1, max_value=10.0, value=st.session_state.form_values['st_rad'], step=0.1, format="%.2f", help="Size of the star compared to our Sun")
         
-        st.markdown("### 🌍 System Configuration")
+        st.markdown("### System Configuration")
         sy_dist = st.number_input('System Distance (pc)', min_value=1, max_value=10000, value=st.session_state.form_values['sy_dist'], step=10, help="Distance to the planetary system in parsecs")
         
-        submitted = st.form_submit_button("🚀 Launch Mission", use_container_width=True)
+        submitted = st.form_submit_button("Launch Mission", use_container_width=True)
     
     # Update session state with current form values
     st.session_state.form_values = {
@@ -683,7 +657,7 @@ def main():
     df_features_result = None
     
     with col1:
-        st.markdown("### 🔍 Mission Analysis")
+        st.markdown("### Mission Analysis")
         
         if submitted or (st.session_state.selected_preset_name and st.session_state.selected_preset_name != "Custom"):
             # Mission progress
@@ -691,15 +665,15 @@ def main():
             status_text = st.empty()
             
             # Simulate mission progress
-            status_text.text("🚀 Initializing mission parameters...")
+            status_text.text("Initializing mission parameters...")
             progress_bar.progress(20)
             time.sleep(0.5)
             
-            status_text.text("🔬 Processing transit data...")
+            status_text.text("Processing transit data...")
             progress_bar.progress(40)
             time.sleep(0.5)
             
-            status_text.text("🤖 Deploying AI analysis...")
+            status_text.text("Deploying AI analysis...")
             progress_bar.progress(60)
             time.sleep(0.5)
             
@@ -711,7 +685,7 @@ def main():
             X = df_features.drop(columns=base_features_to_exclude, errors='ignore')
             X = X[features]  # Ensure correct feature order
             
-            status_text.text("⚡ Running neural network analysis...")
+            status_text.text("Running neural network analysis...")
             progress_bar.progress(80)
             time.sleep(0.5)
             
@@ -725,7 +699,7 @@ def main():
             confidence_result = max(probability) * 100
             df_features_result = df_features
             
-            status_text.text("✅ Mission complete!")
+            status_text.text("Mission complete!")
             progress_bar.progress(100)
             time.sleep(0.5)
             
@@ -735,37 +709,37 @@ def main():
             
             # Display results with enhanced storytelling
             if prediction == 1:
-                st.markdown('<div class="detection-card"><h2>🎉 MISSION SUCCESS!</h2><h3>🚀 EXOPLANET DETECTED! 🚀</h3><p>Congratulations, Space Explorer! You have successfully discovered a new world beyond our solar system!</p></div>', unsafe_allow_html=True)
+                st.markdown('<div class="detection-card"><h2>MISSION SUCCESS!</h2><h3>EXOPLANET DETECTED!</h3><p>Congratulations, Space Explorer! You have successfully discovered a new world beyond our solar system!</p></div>', unsafe_allow_html=True)
                 
                 # Celebration animation
                 st.balloons()
                 
                 # Mission success details
-                st.success("🎊 **Mission Accomplished!** This appears to be a real exoplanet based on our advanced AI analysis.")
+                st.success("**Mission Accomplished!** This appears to be a real exoplanet based on our advanced AI analysis.")
             else:
-                st.markdown('<div class="no-detection-card"><h2>🔍 MISSION CONTINUES</h2><h3>No Exoplanet Detected</h3><p>This appears to be stellar variability or a false positive. Don\'t give up - space is full of mysteries waiting to be discovered!</p></div>', unsafe_allow_html=True)
+                st.markdown('<div class="no-detection-card"><h2>MISSION CONTINUES</h2><h3>No Exoplanet Detected</h3><p>This appears to be stellar variability or a false positive. Don\'t give up - space is full of mysteries waiting to be discovered!</p></div>', unsafe_allow_html=True)
                 
-                st.info("🔬 **Analysis Complete:** This signal appears to be stellar variability or instrumental noise. Try different parameters to find your exoplanet!")
+                st.info("**Analysis Complete:** This signal appears to be stellar variability or instrumental noise. Try different parameters to find your exoplanet!")
             
             # Confidence display
             confidence = max(probability) * 100
             if confidence > 90:
-                st.markdown(f'<div class="metric-card"><h3>🎯 Mission Confidence</h3><p style="font-size: 2rem; margin: 0;">{confidence:.1f}%</p><p>Excellent detection quality!</p></div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="metric-card"><h3>Mission Confidence</h3><p style="font-size: 2rem; margin: 0;">{confidence:.1f}%</p><p>Excellent detection quality!</p></div>', unsafe_allow_html=True)
             elif confidence > 70:
-                st.markdown(f'<div class="metric-card"><h3>🎯 Mission Confidence</h3><p style="font-size: 2rem; margin: 0;">{confidence:.1f}%</p><p>Good detection quality</p></div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="metric-card"><h3>Mission Confidence</h3><p style="font-size: 2rem; margin: 0;">{confidence:.1f}%</p><p>Good detection quality</p></div>', unsafe_allow_html=True)
             else:
-                st.markdown(f'<div class="metric-card"><h3>🎯 Mission Confidence</h3><p style="font-size: 2rem; margin: 0;">{confidence:.1f}%</p><p>Uncertain detection</p></div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="metric-card"><h3>Mission Confidence</h3><p style="font-size: 2rem; margin: 0;">{confidence:.1f}%</p><p>Uncertain detection</p></div>', unsafe_allow_html=True)
             
             # Add animation and light curve tabs if exoplanet detected
             if prediction == 1:
-                tab1, tab2 = st.tabs(["🎬 View Animation", "📈 Light Curve"])
+                tab1, tab2 = st.tabs(["View Animation", "Light Curve"])
                 
                 with tab1:
-                    st.markdown('<div class="animation-card"><h2>🎬 Immersive 3D Transit Simulation</h2><h3>Experience your exoplanet discovery in stunning detail!</h3></div>', unsafe_allow_html=True)
+                    st.markdown('<div class="animation-card"><h2>Immersive 3D Transit Simulation</h2><h3>Experience your exoplanet discovery in stunning detail!</h3></div>', unsafe_allow_html=True)
                     
                     # Mission briefing for animation
                     st.info("""
-                    **🎮 Mission Control Instructions:**
+                    **Mission Control Instructions:**
                     - Use mouse to rotate camera and explore the system
                     - Scroll to zoom in/out for detailed views
                     - Try different viewing modes: Earth View, Space View, Top View, Side View
@@ -806,15 +780,15 @@ def main():
                         # Combine the animation HTML with parameter updates
                         full_animation_html = animation_html + js_params
                         
-                        # Display the animation in an iframe with much larger height
-                        components.html(full_animation_html, height=900, scrolling=False)
+                        # Display the animation in an iframe with 1920x1080 resolution
+                        components.html(full_animation_html, height=1080, scrolling=False)
                         
                         # Mission success celebration
-                        st.success("🎉 **Mission Visualization Active!** Your exoplanet is now being simulated in real-time!")
+                        st.success("**Mission Visualization Active!** Your exoplanet is now being simulated in real-time!")
                         
                         # Compact mission parameters - moved to collapsible section
-                        with st.expander("📊 Mission Parameters & Details", expanded=False):
-                            st.markdown("### 🌟 Key Parameters")
+                        with st.expander("Mission Parameters & Details", expanded=False):
+                            st.markdown("### Key Parameters")
                             param_col1, param_col2, param_col3 = st.columns(3)
                             with param_col1:
                                 st.metric("Transit Duration", f"{df_features['transit_duration'].iloc[0]:.2f} hours")
@@ -826,7 +800,7 @@ def main():
                                 st.metric("Star Temperature", f"{st_teff:.0f} K")
                                 st.metric("Star Radius", f"{st_rad:.2f} R☉")
                             
-                            st.markdown("### 🔬 Advanced Physics")
+                            st.markdown("### Advanced Physics")
                             physics_col1, physics_col2 = st.columns(2)
                             with physics_col1:
                                 st.metric("Planet-to-Star Ratio", f"{df_features['rp_rs_ratio'].iloc[0]:.6f}")
@@ -840,7 +814,7 @@ def main():
                         st.info("Enhanced animation will be available once the template file is properly set up.")
                 
                 with tab2:
-                    st.markdown('<div class="animation-card"><h2>📈 Transit Light Curve</h2><h3>Observe the brightness variation during transit</h3></div>', unsafe_allow_html=True)
+                    st.markdown('<div class="animation-card"><h2>Transit Light Curve</h2><h3>Observe the brightness variation during transit</h3></div>', unsafe_allow_html=True)
                     
                     # Generate and display light curve
                     try:
@@ -849,7 +823,7 @@ def main():
                         st.plotly_chart(fig, use_container_width=True)
                         
                         # Light curve information
-                        st.markdown("### 📊 Light Curve Analysis")
+                        st.markdown("### Light Curve Analysis")
                         lc_col1, lc_col2 = st.columns(2)
                         with lc_col1:
                             st.metric("Maximum Transit Depth", f"{transit_depth_curve:.6f}")
@@ -864,7 +838,7 @@ def main():
             st.markdown('<div class="spacer"></div>', unsafe_allow_html=True)
             
             # Create tabs for detailed analysis
-            tab3, tab4 = st.tabs(["🔬 Transit Features", "✅ Sanity Checks"])
+            tab3, tab4 = st.tabs(["Transit Features", "Sanity Checks"])
             
             with tab3:
                 st.markdown('<div class="spacer"></div>', unsafe_allow_html=True)
@@ -883,33 +857,33 @@ def main():
                 st.markdown('<div class="spacer"></div>', unsafe_allow_html=True)
                 sanity_checks = []
                 if df_features['size_sanity_check'].iloc[0] == 1:
-                    sanity_checks.append("✅ Planet radius reasonable (Rp/Rs < 1)")
+                    sanity_checks.append("Planet radius reasonable (Rp/Rs < 1)")
                 else:
-                    sanity_checks.append("⚠️ Planet may be too large relative to star")
+                    sanity_checks.append("Planet may be too large relative to star")
                 
                 if df_features['period_sanity_check'].iloc[0] == 1:
-                    sanity_checks.append("✅ Orbital period reasonable")
+                    sanity_checks.append("Orbital period reasonable")
                 else:
-                    sanity_checks.append("⚠️ Orbital period unusual")
+                    sanity_checks.append("Orbital period unusual")
                 
                 if df_features['temperature_sanity_check'].iloc[0] == 1:
-                    sanity_checks.append("✅ Stellar temperature reasonable")
+                    sanity_checks.append("Stellar temperature reasonable")
                 else:
-                    sanity_checks.append("⚠️ Stellar temperature unusual")
+                    sanity_checks.append("Stellar temperature unusual")
                     
                 if df_features['transit_depth_sanity'].iloc[0] == 1:
-                    sanity_checks.append("✅ Transit depth reasonable")
+                    sanity_checks.append("Transit depth reasonable")
                 else:
-                    sanity_checks.append("⚠️ Transit depth unusual")
+                    sanity_checks.append("Transit depth unusual")
                 
                 for check in sanity_checks:
                     st.markdown(f'<div class="info-card">{check}</div>', unsafe_allow_html=True)
         
         else:
-            st.markdown('<div class="mission-card"><h3>🚀 Ready for Launch!</h3><p>Configure your mission parameters in the Mission Control Panel and click "Launch Mission" to begin your exoplanet discovery journey!</p></div>', unsafe_allow_html=True)
+            st.markdown('<div class="mission-card"><h3>Ready for Launch!</h3><p>Configure your mission parameters in the Mission Control Panel and click "Launch Mission" to begin your exoplanet discovery journey!</p></div>', unsafe_allow_html=True)
             
             # Mission preparation checklist
-            st.markdown("### 📋 Mission Preparation Checklist")
+            st.markdown("### Mission Preparation Checklist")
             st.markdown("""
             - [ ] Set planetary parameters (orbital period, radius)
             - [ ] Configure stellar properties (temperature, radius)
@@ -920,7 +894,7 @@ def main():
             """)
             
             # Quick start guide
-            with st.expander("🚀 Quick Start Guide", expanded=False):
+            with st.expander("Quick Start Guide", expanded=False):
                 st.markdown("""
                 **New to ExoScope AI? Here's how to get started:**
                 
@@ -935,25 +909,25 @@ def main():
     
     with col2:
         # Compact mission control status
-        st.markdown("### 🚀 Mission Control")
+        st.markdown("### Mission Control")
         
         # Key metrics only
         st.metric("AI Detection", "96.74%", "±0.5%")
-        st.metric("Processing Speed", "Real-time", "⚡")
-        st.metric("Data Sources", "Kepler, K2, TESS", "🔬")
+        st.metric("Processing Speed", "Real-time", "Active")
+        st.metric("Data Sources", "Kepler, K2, TESS", "Operational")
         
         # Collapsible sections for detailed info
-        with st.expander("🛠️ Mission Capabilities", expanded=False):
+        with st.expander("Mission Capabilities", expanded=False):
             st.markdown("""
-            - ✅ **Advanced AI**: Neural network trained on NASA data
-            - ✅ **3D Visualization**: Immersive transit simulation
-            - ✅ **Real-time Analysis**: Instant results and feedback
-            - ✅ **Multiple Viewing Modes**: Earth, Space, Top, Side views
-            - ✅ **Binary Star Systems**: Support for complex stellar systems
-            - ✅ **Educational Content**: Learn while you explore
+            - **Advanced AI**: Neural network trained on NASA data
+            - **3D Visualization**: Immersive transit simulation
+            - **Real-time Analysis**: Instant results and feedback
+            - **Multiple Viewing Modes**: Earth, Space, Top, Side views
+            - **Binary Star Systems**: Support for complex stellar systems
+            - **Educational Content**: Learn while you explore
             """)
         
-        with st.expander("📊 Performance Details", expanded=False):
+        with st.expander("Performance Details", expanded=False):
             st.metric("Detection Accuracy", "96.74%", "±0.5%")
             st.metric("False Positive Rate", "3.0%", "-1.2%")
             st.metric("Mission Success Rate", "98.0%", "±0.3%")
@@ -961,7 +935,7 @@ def main():
         # Preset Information Display - Compact
         if st.session_state.selected_preset_name and st.session_state.selected_preset_name != "Custom":
             preset_info = preset_data[st.session_state.selected_preset_name]
-            with st.expander("📖 Target Information", expanded=False):
+            with st.expander("Target Information", expanded=False):
                 st.markdown(f'**Status:** {preset_info["status"]}')
                 st.markdown(f'**Description:** {preset_info["description"]}')
                 st.markdown(f'**Discovery:** {preset_info["discovery"]}')
