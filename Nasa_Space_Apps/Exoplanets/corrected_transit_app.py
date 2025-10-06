@@ -258,6 +258,32 @@ st.markdown("""
         background: linear-gradient(90deg, #64c8ff, #ff6b9d);
     }
     
+    /* Disable scrolling on main page */
+    .main {
+        overflow: hidden;
+        height: 100vh;
+    }
+    
+    .main .block-container {
+        height: 100vh;
+        overflow-y: auto;
+    }
+    
+    /* Remove link icons on hover */
+    a[href]:hover::after,
+    a[href]:focus::after {
+        display: none !important;
+    }
+    
+    /* Remove all link decorations */
+    a {
+        text-decoration: none !important;
+    }
+    
+    a:hover {
+        text-decoration: none !important;
+    }
+    
     /* Success message */
     .stSuccess {
         background: linear-gradient(135deg, rgba(0, 255, 100, 0.2), rgba(100, 255, 150, 0.2));
@@ -671,6 +697,47 @@ def main():
         'sy_dist': sy_dist
     }
     
+    # Floating Mission Control toggle button
+    st.markdown("""
+    <div id="mission-control-toggle" style="
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 1000;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 2px solid rgba(100, 200, 255, 0.3);
+        border-radius: 50px;
+        padding: 10px 20px;
+        color: #64c8ff;
+        font-family: 'Orbitron', monospace;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: none;
+    " onclick="toggleMissionControl()">
+        ⚙️ Mission Control
+    </div>
+    
+    <script>
+    function toggleMissionControl() {
+        const sidebar = document.querySelector('[data-testid="stSidebar"]');
+        if (sidebar) {
+            if (sidebar.style.display === 'none') {
+                sidebar.style.display = 'block';
+                sidebar.style.transition = 'transform 0.5s ease-in-out';
+                sidebar.style.transform = 'translateX(0)';
+            } else {
+                sidebar.style.transition = 'transform 0.5s ease-in-out';
+                sidebar.style.transform = 'translateX(-100%)';
+                setTimeout(function() {
+                    sidebar.style.display = 'none';
+                }, 500);
+            }
+        }
+    }
+    </script>
+    """, unsafe_allow_html=True)
+    
     # Main content area - Give more space to animation
     col1, col2 = st.columns([4, 1])
     
@@ -725,6 +792,30 @@ def main():
             status_text.text("Mission complete!")
             progress_bar.progress(100)
             time.sleep(0.5)
+            
+            # Auto-close Mission Control with animation
+            st.markdown("""
+            <script>
+            setTimeout(function() {
+                // Find the sidebar and add closing animation
+                const sidebar = document.querySelector('[data-testid="stSidebar"]');
+                const toggleButton = document.getElementById('mission-control-toggle');
+                
+                if (sidebar) {
+                    sidebar.style.transition = 'transform 0.5s ease-in-out';
+                    sidebar.style.transform = 'translateX(-100%)';
+                    
+                    // After animation, hide it completely and show toggle button
+                    setTimeout(function() {
+                        sidebar.style.display = 'none';
+                        if (toggleButton) {
+                            toggleButton.style.display = 'block';
+                        }
+                    }, 500);
+                }
+            }, 1000); // Wait 1 second after mission complete
+            </script>
+            """, unsafe_allow_html=True)
             
             # Clear progress indicators
             progress_bar.empty()
