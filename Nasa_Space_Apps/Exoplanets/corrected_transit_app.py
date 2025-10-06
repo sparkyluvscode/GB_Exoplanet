@@ -460,7 +460,7 @@ def main():
                     try:
                         # Read the animation template
                         script_dir = os.path.dirname(os.path.abspath(__file__))
-                        animation_path = os.path.join(script_dir, 'animation_template.html')
+                        animation_path = os.path.join(script_dir, 'simple_animation.html')
                         
                         with open(animation_path, 'r', encoding='utf-8') as f:
                             animation_html = f.read()
