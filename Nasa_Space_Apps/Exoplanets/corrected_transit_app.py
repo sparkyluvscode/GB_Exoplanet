@@ -255,6 +255,81 @@ st.markdown("""
         border: 1px solid rgba(100, 200, 255, 0.5);
         border-radius: 10px;
     }
+    
+    /* Disable scrolling on sidebar */
+    [data-testid="stSidebar"] {
+        overflow: hidden !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+    }
+    
+    [data-testid="stSidebar"] > div {
+        overflow: hidden !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+    }
+    
+    /* Remove link icons on hover */
+    a[href]:hover::after,
+    a[href]:focus::after,
+    a[href]::after,
+    a::after {
+        display: none !important;
+        content: none !important;
+    }
+    
+    a, a:visited, a:active, a:focus, a:hover {
+        text-decoration: none !important;
+        color: inherit !important;
+    }
+    
+    .stApp a, .stApp a:hover {
+        text-decoration: none !important;
+        color: inherit !important;
+    }
+    
+    *::before, *::after {
+        content: none !important;
+    }
+    
+    /* Enhanced tab styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 0.5rem;
+        background: linear-gradient(135deg, rgba(100, 200, 255, 0.1), rgba(255, 107, 157, 0.1));
+        border-radius: 10px;
+        padding: 0.5rem;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background: transparent;
+        border: 2px solid transparent;
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        font-family: 'Orbitron', monospace;
+        font-weight: bold;
+        font-size: 1.1rem;
+        color: #a0a0a0;
+        transition: all 0.3s ease;
+        min-height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .stTabs [data-baseweb="tab"]:hover {
+        background: linear-gradient(135deg, rgba(100, 200, 255, 0.2), rgba(255, 107, 157, 0.2));
+        border-color: rgba(100, 200, 255, 0.5);
+        color: #64c8ff;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(100, 200, 255, 0.3);
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, rgba(100, 200, 255, 0.3), rgba(255, 107, 157, 0.3));
+        border-color: #64c8ff;
+        color: #64c8ff;
+        box-shadow: 0 5px 20px rgba(100, 200, 255, 0.4);
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -659,7 +734,7 @@ def main():
     with col1:
         st.markdown("### Mission Analysis")
         
-        if submitted or (st.session_state.selected_preset_name and st.session_state.selected_preset_name != "Custom"):
+        if submitted:
             # Mission progress
             progress_bar = st.progress(0)
             status_text = st.empty()
@@ -709,29 +784,136 @@ def main():
             
             # Display results with enhanced storytelling
             if prediction == 1:
-                st.markdown('<div class="detection-card"><h2>MISSION SUCCESS!</h2><h3>EXOPLANET DETECTED!</h3><p>Congratulations, Space Explorer! You have successfully discovered a new world beyond our solar system!</p></div>', unsafe_allow_html=True)
+                # Integrated result card with confidence
+                confidence = max(probability) * 100
+                if confidence > 90:
+                    confidence_text = "Excellent detection quality!"
+                    confidence_color = "#00ff88"
+                elif confidence > 70:
+                    confidence_text = "Good detection quality"
+                    confidence_color = "#64c8ff"
+                else:
+                    confidence_text = "Uncertain detection"
+                    confidence_color = "#ffaa00"
                 
-                # Celebration animation
-                st.balloons()
+                st.markdown(f'''
+                <div class="integrated-result-card" style="
+                    background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(100, 200, 255, 0.1));
+                    border: 2px solid rgba(0, 255, 136, 0.3);
+                    border-radius: 15px;
+                    padding: 2rem;
+                    margin: 1rem 0;
+                    text-align: center;
+                    transition: all 0.3s ease;
+                ">
+                    <h2 style="color: #64c8ff; font-family: 'Orbitron', monospace; margin-bottom: 1rem;">MISSION SUCCESS!</h2>
+                    <h3 style="color: #ff6b9d; font-family: 'Orbitron', monospace; margin-bottom: 1.5rem;">EXOPLANET DETECTED!</h3>
+                    <div style="margin: 1.5rem 0;">
+                        <p style="font-size: 3rem; margin: 0; color: {confidence_color}; font-weight: bold;">{confidence:.1f}%</p>
+                        <p style="color: #a0a0a0; margin: 0.5rem 0;">Mission Confidence</p>
+                        <p style="color: {confidence_color}; margin: 0;">{confidence_text}</p>
+                    </div>
+                    <p style="color: #a0a0a0; margin: 0;">Congratulations, Space Explorer! You have successfully discovered a new world beyond our solar system!</p>
+                </div>
+                <style>
+                .integrated-result-card:hover {{
+                    transform: translateY(-5px);
+                    box-shadow: 0 10px 30px rgba(0, 255, 136, 0.2);
+                    border-color: rgba(0, 255, 136, 0.5);
+                }}
+                </style>
+                ''', unsafe_allow_html=True)
+                
+                # Navy screen fade effect
+                st.markdown("""
+                <div id="fade-overlay" style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+                    z-index: 9999;
+                    animation: fadeInOut 2s ease-in-out forwards;
+                ">
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                        text-align: center; color: white; font-family: 'Orbitron', monospace;">
+                        <h1 style="font-size: 3rem; margin-bottom: 1rem; color: #64c8ff;">MISSION SUCCESS!</h1>
+                        <h2 style="font-size: 2rem; margin-bottom: 2rem; color: #ff6b9d;">EXOPLANET DETECTED!</h2>
+                        <p style="font-size: 1.2rem; color: #a0a0a0;">Congratulations, Space Explorer!</p>
+                    </div>
+                </div>
+                <style>
+                @keyframes fadeInOut {
+                    0% { opacity: 0; }
+                    20% { opacity: 1; }
+                    80% { opacity: 1; }
+                    100% { opacity: 0; visibility: hidden; }
+                }
+                </style>
+                <script>
+                setTimeout(function() {
+                    var overlay = document.getElementById('fade-overlay');
+                    if (overlay) { overlay.style.display = 'none'; }
+                }, 2000);
+                </script>
+                """, unsafe_allow_html=True)
                 
                 # Mission success details
                 st.success("**Mission Accomplished!** This appears to be a real exoplanet based on our advanced AI analysis.")
             else:
                 st.markdown('<div class="no-detection-card"><h2>MISSION CONTINUES</h2><h3>No Exoplanet Detected</h3><p>This appears to be stellar variability or a false positive. Don\'t give up - space is full of mysteries waiting to be discovered!</p></div>', unsafe_allow_html=True)
                 
+                # Navy screen fade effect for no detection
+                st.markdown("""
+                <div id="fade-overlay-negative" style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+                    z-index: 9999;
+                    animation: fadeInOut 2s ease-in-out forwards;
+                ">
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                        text-align: center; color: white; font-family: 'Orbitron', monospace;">
+                        <h1 style="font-size: 3rem; margin-bottom: 1rem; color: #ffaa00;">MISSION CONTINUES</h1>
+                        <h2 style="font-size: 2rem; margin-bottom: 2rem; color: #64c8ff;">NO EXOPLANET DETECTED</h2>
+                        <p style="font-size: 1.2rem; color: #a0a0a0;">Keep exploring, Space Explorer!</p>
+                    </div>
+                </div>
+                <script>
+                setTimeout(function() {
+                    var overlay = document.getElementById('fade-overlay-negative');
+                    if (overlay) { overlay.style.display = 'none'; }
+                }, 2000);
+                </script>
+                """, unsafe_allow_html=True)
+                
                 st.info("**Analysis Complete:** This signal appears to be stellar variability or instrumental noise. Try different parameters to find your exoplanet!")
             
-            # Confidence display
-            confidence = max(probability) * 100
-            if confidence > 90:
-                st.markdown(f'<div class="metric-card"><h3>Mission Confidence</h3><p style="font-size: 2rem; margin: 0;">{confidence:.1f}%</p><p>Excellent detection quality!</p></div>', unsafe_allow_html=True)
-            elif confidence > 70:
-                st.markdown(f'<div class="metric-card"><h3>Mission Confidence</h3><p style="font-size: 2rem; margin: 0;">{confidence:.1f}%</p><p>Good detection quality</p></div>', unsafe_allow_html=True)
-            else:
-                st.markdown(f'<div class="metric-card"><h3>Mission Confidence</h3><p style="font-size: 2rem; margin: 0;">{confidence:.1f}%</p><p>Uncertain detection</p></div>', unsafe_allow_html=True)
+            # Confidence is now integrated in the result card above
             
-            # Add animation and light curve tabs if exoplanet detected
+            # Auto-close sidebar after prediction
+            st.markdown("""
+            <script>
+            setTimeout(function() {
+                const sidebar = document.querySelector('[data-testid="stSidebar"]');
+                if (sidebar) {
+                    sidebar.style.transition = 'transform 0.5s ease-in-out';
+                    sidebar.style.transform = 'translateX(-100%)';
+                    setTimeout(function() {
+                        sidebar.style.display = 'none';
+                    }, 500);
+                }
+            }, 1000);
+            </script>
+            """, unsafe_allow_html=True)
+            
+            # Smart Animation System - Auto-launch based on prediction
             if prediction == 1:
+                # Exoplanet detected - show exoplanet simulation
                 tab1, tab2 = st.tabs(["View Animation", "Light Curve"])
                 
                 with tab1:
@@ -759,10 +941,10 @@ def main():
                         # Calculate transit duration for animation
                         transit_duration_hours = df_features['transit_duration'].iloc[0]
                         
-                        # Create JavaScript to update animation parameters
+                        # Create JavaScript to update animation parameters for exoplanet
                         js_params = f"""
                         <script>
-                        // Update animation parameters when the page loads
+                        // Update animation parameters for exoplanet system
                         window.addEventListener('load', function() {{
                             if (window.updateAnimationParameters) {{
                                 window.updateAnimationParameters({{
@@ -770,7 +952,9 @@ def main():
                                     planetRadius: {pl_rade},
                                     starRadius: {st_rad},
                                     starTemperature: {st_teff},
-                                    transitDuration: {transit_duration_hours}
+                                    transitDuration: {transit_duration_hours},
+                                    binary_star_mode: false,
+                                    show_planet: true
                                 }});
                             }}
                         }});
@@ -833,6 +1017,56 @@ def main():
                             st.metric("Planet-to-Star Ratio", f"{df_features['rp_rs_ratio'].iloc[0]:.6f}")
                     except Exception as e:
                         st.error(f"Error generating light curve: {e}")
+            else:
+                # No exoplanet detected - show binary star system simulation
+                st.markdown('<div class="animation-card"><h2>Binary Star System Simulation</h2><h3>Observe the stellar variability that caused the false positive signal!</h3></div>', unsafe_allow_html=True)
+                
+                # Mission briefing for binary star animation
+                st.info("""
+                **Mission Control Instructions:**
+                - Use mouse to rotate camera and explore the binary system
+                - Scroll to zoom in/out for detailed views
+                - Watch the stellar variability that created the false positive signal
+                - This simulation shows why the AI detected a signal but determined it wasn't an exoplanet
+                """)
+                
+                # Load and display the binary star animation
+                try:
+                    # Read the enhanced animation template
+                    script_dir = os.path.dirname(os.path.abspath(__file__))
+                    animation_path = os.path.join(script_dir, 'enhanced_animation_template.html')
+                    
+                    with open(animation_path, 'r', encoding='utf-8') as f:
+                        animation_html = f.read()
+                    
+                    # Create JavaScript to update animation parameters for binary star
+                    js_params = f"""
+                    <script>
+                    // Update animation parameters for binary star system
+                    window.addEventListener('load', function() {{
+                        if (window.updateAnimationParameters) {{
+                            window.updateAnimationParameters({{
+                                orbitalPeriod: {pl_orbper},
+                                planetRadius: {pl_rade},
+                                starRadius: {st_rad},
+                                starTemperature: {st_teff},
+                                binary_star_mode: true,
+                                show_planet: false
+                            }});
+                        }}
+                    }});
+                    </script>
+                    """
+                    
+                    # Combine the animation HTML with parameter updates
+                    full_animation_html = animation_html + js_params
+                    
+                    # Display the animation in an iframe with 1920x1080 resolution
+                    components.html(full_animation_html, height=1080)
+                    
+                except Exception as e:
+                    st.error(f"Error loading binary star animation: {e}")
+                    st.info("Binary star animation will be available once the template file is properly set up.")
             
             # Transit features and sanity checks below animation section
             st.markdown('<div class="spacer"></div>', unsafe_allow_html=True)
