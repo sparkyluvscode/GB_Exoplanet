@@ -659,7 +659,7 @@ def main():
     with col1:
         st.markdown("### Mission Analysis")
         
-        if submitted or (st.session_state.selected_preset_name and st.session_state.selected_preset_name != "Custom"):
+        if submitted:
             # Mission progress
             progress_bar = st.progress(0)
             status_text = st.empty()
@@ -711,13 +711,72 @@ def main():
             if prediction == 1:
                 st.markdown('<div class="detection-card"><h2>MISSION SUCCESS!</h2><h3>EXOPLANET DETECTED!</h3><p>Congratulations, Space Explorer! You have successfully discovered a new world beyond our solar system!</p></div>', unsafe_allow_html=True)
                 
-                # Celebration animation
-                st.balloons()
+                # Navy screen fade effect
+                st.markdown("""
+                <div id="fade-overlay" style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+                    z-index: 9999;
+                    animation: fadeInOut 2s ease-in-out forwards;
+                ">
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                        text-align: center; color: white; font-family: 'Orbitron', monospace;">
+                        <h1 style="font-size: 3rem; margin-bottom: 1rem; color: #64c8ff;">MISSION SUCCESS!</h1>
+                        <h2 style="font-size: 2rem; margin-bottom: 2rem; color: #ff6b9d;">EXOPLANET DETECTED!</h2>
+                        <p style="font-size: 1.2rem; color: #a0a0a0;">Congratulations, Space Explorer!</p>
+                    </div>
+                </div>
+                <style>
+                @keyframes fadeInOut {
+                    0% { opacity: 0; }
+                    20% { opacity: 1; }
+                    80% { opacity: 1; }
+                    100% { opacity: 0; visibility: hidden; }
+                }
+                </style>
+                <script>
+                setTimeout(function() {
+                    var overlay = document.getElementById('fade-overlay');
+                    if (overlay) { overlay.style.display = 'none'; }
+                }, 2000);
+                </script>
+                """, unsafe_allow_html=True)
                 
                 # Mission success details
                 st.success("**Mission Accomplished!** This appears to be a real exoplanet based on our advanced AI analysis.")
             else:
                 st.markdown('<div class="no-detection-card"><h2>MISSION CONTINUES</h2><h3>No Exoplanet Detected</h3><p>This appears to be stellar variability or a false positive. Don\'t give up - space is full of mysteries waiting to be discovered!</p></div>', unsafe_allow_html=True)
+                
+                # Navy screen fade effect for no detection
+                st.markdown("""
+                <div id="fade-overlay-negative" style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+                    z-index: 9999;
+                    animation: fadeInOut 2s ease-in-out forwards;
+                ">
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                        text-align: center; color: white; font-family: 'Orbitron', monospace;">
+                        <h1 style="font-size: 3rem; margin-bottom: 1rem; color: #ffaa00;">MISSION CONTINUES</h1>
+                        <h2 style="font-size: 2rem; margin-bottom: 2rem; color: #64c8ff;">NO EXOPLANET DETECTED</h2>
+                        <p style="font-size: 1.2rem; color: #a0a0a0;">Keep exploring, Space Explorer!</p>
+                    </div>
+                </div>
+                <script>
+                setTimeout(function() {
+                    var overlay = document.getElementById('fade-overlay-negative');
+                    if (overlay) { overlay.style.display = 'none'; }
+                }, 2000);
+                </script>
+                """, unsafe_allow_html=True)
                 
                 st.info("**Analysis Complete:** This signal appears to be stellar variability or instrumental noise. Try different parameters to find your exoplanet!")
             
