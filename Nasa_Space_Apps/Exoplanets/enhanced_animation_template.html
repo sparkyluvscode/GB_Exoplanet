@@ -16,9 +16,21 @@
         
         #animation-container {
             width: 100%;
-            height: 100vh;
+            height: 0;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio (9/16 = 0.5625) */
             position: relative;
             background: radial-gradient(ellipse at center, #1a1a2e 0%, #0c0c0c 100%);
+            max-width: 1920px;
+            max-height: 1080px;
+            margin: 0 auto;
+        }
+        
+        #animation-container canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100% !important;
+            height: 100% !important;
         }
         
         #mission-header {
@@ -305,7 +317,6 @@
             <h3 style="margin-top: 0; color: #64c8ff;">Mission Control</h3>
             <button id="playButton" class="control-button" onclick="togglePlayPause()">▶️ Start Mission</button>
             <button id="resetButton" class="control-button reset" onclick="resetAnimation()">🔄 Reset View</button>
-            <button id="binaryButton" class="control-button binary" onclick="toggleBinaryStar()">⭐ Binary System</button>
             <button id="earthViewButton" class="control-button earth-view" onclick="setEarthView()">🌍 Earth View</button>
             <button id="spaceViewButton" class="control-button space-view" onclick="setSpaceView()">🚀 Space View</button>
         </div>
@@ -364,15 +375,33 @@
             transitDuration: 0.0,
             isPlaying: false,
             isBinary: false,
-            viewingMode: 'space'
+            viewingMode: 'space',
+            binary_star_mode: false,
+            show_planet: true
         };
 
-        // Three.js setup
+        // Three.js setup with proper 16:9 aspect ratio
         const scene = new THREE.Scene();
-        const width = window.innerWidth;
-        const height = window.innerHeight;
+        const aspectRatio = 16/9; // 1920/1080 = 16/9
         
-        const camera = new THREE.PerspectiveCamera(60, width / height, 1, 1000000);
+        // Get container dimensions
+        const container = document.getElementById('animation-container');
+        const containerWidth = container.clientWidth;
+        const containerHeight = container.clientHeight;
+        
+        // Calculate renderer size maintaining 16:9 aspect ratio
+        let width, height;
+        if (containerWidth / containerHeight > aspectRatio) {
+            // Container is wider than 16:9, fit to height
+            height = containerHeight;
+            width = height * aspectRatio;
+        } else {
+            // Container is taller than 16:9, fit to width
+            width = containerWidth;
+            height = width / aspectRatio;
+        }
+        
+        const camera = new THREE.PerspectiveCamera(60, aspectRatio, 1, 1000000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(width, height);
         renderer.setClearColor(0x000000, 1);
@@ -380,6 +409,28 @@
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         
         document.getElementById('animation-container').appendChild(renderer.domElement);
+        
+        // Handle window resize to maintain 16:9 aspect ratio
+        function handleResize() {
+            const container = document.getElementById('animation-container');
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+            
+            let width, height;
+            if (containerWidth / containerHeight > aspectRatio) {
+                height = containerHeight;
+                width = height * aspectRatio;
+            } else {
+                width = containerWidth;
+                height = width / aspectRatio;
+            }
+            
+            camera.aspect = aspectRatio;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        }
+        
+        window.addEventListener('resize', handleResize);
 
         // Texture loader with fallback textures
         const textureLoader = new THREE.TextureLoader();
@@ -478,20 +529,22 @@
                 if (obj) scene.remove(obj);
             });
 
-            // Create planet
-            const planetGeometry = new THREE.SphereGeometry(derivedParams.planetSize, 64, 64);
-            const planetMaterial = new THREE.MeshStandardMaterial({ 
-                map: terrestrialTexture,
-                roughness: 0.8,
-                metalness: 0.1
-            });
-            planet = new THREE.Mesh(planetGeometry, planetMaterial);
-            planet.castShadow = true;
-            planet.receiveShadow = true;
-            planet.name = "planet";
-            scene.add(planet);
+            // Create planet (only if show_planet is true)
+            if (missionParams.show_planet !== false) {
+                const planetGeometry = new THREE.SphereGeometry(derivedParams.planetSize, 64, 64);
+                const planetMaterial = new THREE.MeshStandardMaterial({ 
+                    map: terrestrialTexture,
+                    roughness: 0.8,
+                    metalness: 0.1
+                });
+                planet = new THREE.Mesh(planetGeometry, planetMaterial);
+                planet.castShadow = true;
+                planet.receiveShadow = true;
+                planet.name = "planet";
+                scene.add(planet);
+            }
 
-            if (!missionParams.isBinary) {
+            if (!missionParams.isBinary && !missionParams.binary_star_mode) {
                 // Single star system
                 const starGeometry = new THREE.SphereGeometry(derivedParams.starSize, 64, 64);
                 const starMaterial = new THREE.MeshStandardMaterial({ 
@@ -531,7 +584,7 @@
                 orbitRing.rotation.x = -Math.PI / 2;
                 orbitRing.name = "orbit";
                 scene.add(orbitRing);
-            } else {
+            } else if (missionParams.isBinary || missionParams.binary_star_mode) {
                 // Binary star system
                 const star1Geometry = new THREE.SphereGeometry(derivedParams.starSize * 0.6, 64, 64);
                 const star1Material = new THREE.MeshStandardMaterial({ 
@@ -675,7 +728,7 @@
                 }
             }
 
-            if (missionParams.isBinary) {
+            if (missionParams.isBinary || missionParams.binary_star_mode) {
                 // Binary star animation
                 if (binaryStar1) {
                     binaryStar1.rotation.y -= 0.02;
@@ -764,19 +817,6 @@
             renderer.render(scene, camera);
         }
 
-        function toggleBinaryStar() {
-            missionParams.isBinary = !missionParams.isBinary;
-            derivedParams = calculateDerivedParams();
-            createObjects();
-            setupLighting();
-            setupCamera();
-            updateDisplay();
-            
-            const binaryButton = document.getElementById('binaryButton');
-            binaryButton.textContent = missionParams.isBinary ? '⭐ Single Star' : '⭐ Binary System';
-            
-            renderer.render(scene, camera);
-        }
 
         function setEarthView() {
             missionParams.viewingMode = 'earth';
@@ -896,14 +936,11 @@
             camera.position.multiplyScalar(1 + direction * zoomSpeed);
         });
 
-        // Keyboard controls
+        // Keyboard controls (B key removed - no binary toggle)
         document.addEventListener('keydown', (e) => {
             switch(e.key.toLowerCase()) {
                 case 'r':
                     resetAnimation();
-                    break;
-                case 'b':
-                    toggleBinaryStar();
                     break;
                 case ' ':
                     e.preventDefault();
